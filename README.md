@@ -2,7 +2,7 @@
 
 An Azure Monitor / Microsoft Sentinel workbook for reviewing table retention, increasing total retention for one or many tables, and forecasting Data Lake storage costs.
 
-**Current version: 3.0**
+**Current version: 3.1**
 
 Download [SentinelDataLakeRetention.workbook.json](SentinelDataLakeRetention.workbook.json) and import it into a workbook. No scripts, deployments, Azure Functions, Logic Apps, Automation accounts, or helper identities are required.
 
@@ -42,7 +42,7 @@ Defender portal access alone does not necessarily grant the Azure permissions re
 5. Select your subscription and workspace.
 6. Save a copy in your environment if desired.
 
-The header should show **Workbook revision: 3.0**. Reimport the JSON when upgrading an existing copy; close any old confirmation pane and reselect tables after upgrading.
+The header should show **Workbook revision: 3.1**. Reimport the JSON when upgrading an existing copy; close any old confirmation pane and reselect tables after upgrading.
 
 ## Update retention
 
@@ -126,12 +126,26 @@ There is **no automatic retry or rollback**. If a batch partially succeeds, inve
 ## Forecast Data Lake storage costs
 
 1. Open **Costs**.
-2. Enter the customer's **Lake storage rate per billed GB-month**.
+2. Choose **USD - US dollar ($)** or **EUR - Euro (€)** and enter the customer's **Lake storage rate** in that currency per billed GB-month.
 3. Choose **7, 30, or 90 full UTC days** of observed volume; the default is 30.
 4. Select the tables to forecast. This selection is independent of the update selection.
-5. Change the target retention and compare the current, proposed, and additional monthly costs.
+5. Change the target retention and compare the spend columns below.
+
+| Spend column | Meaning |
+|---|---|
+| **Est. current Lake spend** | Estimated monthly Lake storage with the current retention settings, not actual invoiced spend. |
+| **Forecast Lake spend** | Estimated total monthly Lake storage with the proposed retention settings. **This is the column to use for the expected Lake-storage spend after extending retention.** |
+| **Monthly difference** | Forecast minus estimated current spend: the additional monthly Lake-storage cost. |
 
 The forecast reads actual table retention from ARM and hourly data volume from `Usage`. It does not add ingestion charges.
+
+### Currency and decimal separators
+
+- **No exchange-rate conversion:** EUR/USD selects the denomination of the rate and results. Enter the actual price in that currency. Switching to EUR does not convert a previously entered USD price; update the rate if the prices differ.
+- **Rate input always uses a dot:** enter `0.03`, not `0,03`, with no currency symbol or thousands separator.
+- **Displayed spend follows the portal's regional decimal format**, not the selected currency. Thousands grouping is disabled to reduce ambiguity. English/US formatting shows `$0.0005`; a comma-decimal locale can show `€0,0005`.
+- Spend is shown with **2-4 decimal places**, so small values such as `0.0005` remain visible. Smaller amounts may round to zero at the displayed precision. Missing estimates remain blank with an explanatory status, not a currency-formatted zero.
+- Money remains numeric in query results for sorting and export. Headers identify the currency and monthly period.
 
 ```text
 Average GB/day = observed GB / observation days
@@ -152,7 +166,7 @@ For 60 GB observed over 30 days, 90-day analytics retention, and an **illustrati
 | 270 days | 180 | 1.80 |
 | 365 days | 275 | 2.75 |
 
-These are example calculations, not a price quote. Currency follows the rate you enter; no currency conversion occurs.
+These are example calculations, not a price quote. With EUR selected and a EUR rate, the results are euros; with USD selected and a USD rate, they are dollars. No currency conversion occurs.
 
 ### Forecast limitations
 

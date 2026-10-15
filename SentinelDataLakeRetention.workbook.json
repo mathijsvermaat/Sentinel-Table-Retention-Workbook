@@ -4,7 +4,7 @@
       "name": "Introduction",
       "type": 1,
       "content": {
-        "json": "# 🛡️ Sentinel Data Lake Retention\r\n## Table retention & storage cost planning\r\n*Workbook revision: 3.0 · Automatic single / batched PATCH · No helper services*\r\n\r\n---\r\n\r\n### 📋 Purpose\r\n**Review table retention, plan storage costs and apply explicit updates** in one Data Lake-integrated workspace. Select one or many tables in the same view: the workbook automatically uses direct PATCH or groups retention-only PATCH requests into batches of up to 20. Only total retention is sent; no schema, subtype, plan or analytics-retention fields are submitted.\r\n\r\n> **⚠️ Before changing retention:** refresh your selection, avoid concurrent changes and verify the result in Defender. Longer retention may increase storage cost. Nothing is applied until you confirm."
+        "json": "# 🛡️ Sentinel Data Lake Retention\r\n## Table retention & storage cost planning\r\n*Workbook revision: 3.1 · Automatic single / batched PATCH · No helper services*\r\n\r\n---\r\n\r\n### 📋 Purpose\r\n**Review table retention, plan storage costs and apply explicit updates** in one Data Lake-integrated workspace. Select one or many tables in the same view: the workbook automatically uses direct PATCH or groups retention-only PATCH requests into batches of up to 20. Only total retention is sent; no schema, subtype, plan or analytics-retention fields are submitted.\r\n\r\n> **⚠️ Before changing retention:** refresh your selection, avoid concurrent changes and verify the result in Defender. Longer retention may increase storage cost. Nothing is applied until you confirm."
       },
       "styleSettings": {
         "margin": "8px 0",
@@ -2182,7 +2182,7 @@
                   "name": "CostLimitations",
                   "type": 1,
                   "content": {
-                    "json": "## 💰 Data Lake storage planning\r\nCompare **current**, **proposed** and **additional monthly storage** costs using measured table volume.\r\n\r\n| Set the scenario | Select tables | Compare |\r\n|---|---|---|\r\n| Enter your **billed GB-month rate** and choose 7 / 30 / 90 full UTC days. | Use the cost inventory below; this selection is independent of retention writes. | Change **Target total retention** above to model 180, 270, 365 days or more. |\r\n\r\n> **📌 Estimate, not an invoice.** Uses observed `Usage` volume and **6:1 billing compression**, not physical Lake occupancy. **No ingestion charge** is included. Enter the compressed-storage rate only; currency follows your rate.\r\n\r\nMissing data is not treated as free storage. Coverage warnings remain visible, and incomplete combined totals are withheld. Planning never applies retention and can include Any/Classic tables. Search does not clear prior selections. Enable **Detailed guidance** above for the full formula and assumptions."
+                    "json": "## 💰 Monthly Data Lake storage spend\r\n**The Forecast Lake spend column is the estimated total monthly Lake-storage cost at your proposed retention.** It is not an ingestion cost.\r\n\r\n| Spend column | What it means |\r\n|---|---|\r\n| **Est. current Lake spend** | Estimated monthly Lake storage at the table's existing retention. This is a model, not the actual Azure invoice. |\r\n| **Forecast Lake spend** | Estimated monthly Lake storage at the proposed total retention. |\r\n| **Monthly difference** | Forecast minus estimated current spend: the additional monthly Lake-storage cost. |\r\n\r\n### 💱 Currency and decimal notation\r\n- Choose **USD ($)** or **EUR (€)**, then enter the storage rate in that currency. Switching currency changes the displayed denomination; **no exchange-rate conversion occurs**. Update the rate if your EUR and USD prices differ.\r\n- **Rate input always uses a decimal dot:** enter `0.03`, not `0,03`. Do not use thousands separators or currency signs in the input.\r\n- Spend cells use the portal's regional decimal format, with **no thousands grouping**. In an English/US format, `$0.0005` means **0.0005 dollars**, not 5 dollars; in a comma-decimal format the same numeric amount can appear as `€0,0005`. Currency selection does not change the portal locale.\r\n- Spend values display **2-4 decimal places**, preserving small estimates such as `0.0005`. Values smaller than the displayed precision may round to zero; missing estimates remain blank and have a reason.\r\n\r\n| Set the scenario | Select tables | Compare |\r\n|---|---|---|\r\n| Enter your billed GB-month rate and choose 7 / 30 / 90 full UTC days. | Use the cost inventory below; its selection is independent of retention writes. | Change **Target total retention** above to model 180, 270, 365 days or more. |\r\n\r\n> **📌 Estimate, not an invoice.** Uses observed `Usage` volume and **6:1 billing compression**, not measured Lake occupancy. **No ingestion charge** is included. Use the compressed-storage rate only.\r\n\r\nMissing data is not treated as free storage. Coverage warnings remain visible, and incomplete combined totals are withheld. Planning never applies retention. Search does not clear prior selections. Enable **Detailed guidance** above for the full formula and assumptions."
                   },
                   "styleSettings": {
                     "margin": "8px 0",
@@ -2198,7 +2198,7 @@
                   },
                   "type": 1,
                   "content": {
-                    "json": "### 📐 How the forecast is calculated\r\n\r\n`Observed GB ÷ observation days × paid Lake days ÷ 6 × storage rate`\r\n\r\n| Input | Meaning |\r\n|---|---|\r\n| Observed volume | `Usage.Quantity / 1000` in GB, including ingestion-billable and nonbillable records. The old workbook called this \"Table Size\"; it is **not physical table size or measured Lake occupancy**. |\r\n| Mirrored Analytics | Paid Lake days = `max(total retention - analytics retention, 0)`. |\r\n| Auxiliary / Lake-only | All retained days are modeled as billable; an API query allowance is not free mirrored Analytics storage. |\r\n| Compression | Microsoft's uniform **6:1** storage billing factor. Use the compressed/billed GB-month rate; do not divide the rate again. |\r\n| Current vs proposed | Both are steady-state forecasts at the same observed average. An already-longer retention is not reduced. |\r\n\r\n### 🧭 Assumptions & coverage\r\n- Future daily volume is assumed constant. Storage accumulates gradually: this is **not next month's invoice** or the sum of bills across the retention period.\r\n- Longer retention does not recover deleted data or backfill historical data from before Lake onboarding.\r\n- Ingestion, processing, queries, analytics storage, tax and changes to discounts are excluded. Currency follows the rate entered.\r\n- The average includes **every day in the window**, not only active days. Partial or stale activity is flagged; Lake-only telemetry may be incomplete.\r\n- Missing data or invalid inputs produce **NO ESTIMATE**, not a zero cost. The combined monetary total is withheld if any selected table cannot be estimated.\r\n\r\n[Sentinel billing & compression](https://learn.microsoft.com/azure/sentinel/billing#understand-the-full-billing-model-for-microsoft-sentinel) · [Usage reference](https://learn.microsoft.com/azure/azure-monitor/reference/tables/usage) · [Regional pricing](https://azure.microsoft.com/pricing/details/microsoft-sentinel/)"
+                    "json": "### 📐 How the forecast is calculated\r\n\r\n`Observed GB ÷ observation days × paid Lake days ÷ 6 × storage rate`\r\n\r\n| Input | Meaning |\r\n|---|---|\r\n| Observed volume | `Usage.Quantity / 1000` in GB, including ingestion-billable and nonbillable records. The old workbook called this \"Table Size\"; it is **not physical table size or measured Lake occupancy**. |\r\n| Mirrored Analytics | Paid Lake days = `max(total retention - analytics retention, 0)`. |\r\n| Auxiliary / Lake-only | All retained days are modeled as billable; an API query allowance is not free mirrored Analytics storage. |\r\n| Compression | Microsoft's uniform **6:1** storage billing factor. Use the compressed/billed GB-month rate; do not divide the rate again. |\r\n| Current vs forecast spend | Both are steady-state monthly Lake-storage forecasts at the same observed average. Monthly difference = forecast minus estimated current spend. An already-longer retention is not reduced. |\r\n\r\n### 🧭 Assumptions & coverage\r\n- Future daily volume is assumed constant. Storage accumulates gradually: this is **not next month's invoice** or the sum of bills across the retention period.\r\n- Longer retention does not recover deleted data or backfill historical data from before Lake onboarding.\r\n- Ingestion, processing, queries, analytics storage, tax and changes to discounts are excluded. Choose EUR or USD and enter the rate in that currency; no FX conversion is performed. Input uses a decimal dot; output follows the portal locale without thousands grouping.\r\n- The average includes **every day in the window**, not only active days. Partial or stale activity is flagged; Lake-only telemetry may be incomplete.\r\n- Missing data or invalid inputs produce **NO ESTIMATE**, not a zero cost. The combined monetary total is withheld if any selected table cannot be estimated.\r\n\r\n[Sentinel billing & compression](https://learn.microsoft.com/azure/sentinel/billing#understand-the-full-billing-model-for-microsoft-sentinel) · [Usage reference](https://learn.microsoft.com/azure/azure-monitor/reference/tables/usage) · [Regional pricing](https://azure.microsoft.com/pricing/details/microsoft-sentinel/)"
                   },
                   "styleSettings": {
                     "margin": "8px 0",
@@ -2210,6 +2210,17 @@
                   "type": 9,
                   "content": {
                     "parameters": [
+                      {
+                        "id": "54a6753c-fd40-43fa-880c-79a72bb0b918",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "CostCurrency",
+                        "label": "Storage pricing currency",
+                        "type": 2,
+                        "value": "USD",
+                        "isRequired": true,
+                        "description": "Select the currency of the storage rate you enter. This does not fetch exchange rates or convert prices.",
+                        "jsonData": "[{\"value\":\"USD\",\"label\":\"USD - US dollar ($)\"},{\"value\":\"EUR\",\"label\":\"EUR - Euro (€)\"}]"
+                      },
                       {
                         "id": "4f4ab223-39a6-ff0c-5bf9-751d142a708d",
                         "type": 2,
@@ -2226,13 +2237,13 @@
                         "version": "KqlParameterItem/1.0",
                         "value": "",
                         "isRequired": true,
-                        "label": "Lake storage rate per billed GB-month",
+                        "label": "Lake storage rate (selected currency / billed GB-month)",
                         "name": "StorageRate",
-                        "description": "Enter your regional/contracted compressed-storage rate. Currency follows this rate; no conversion. No ingestion price is used.",
+                        "description": "Enter your regional/contracted rate in the selected currency. Use a dot for decimals: 0.03, not 0,03. Do not include a currency sign or thousands separator. No exchange-rate conversion or ingestion charge is applied.",
                         "typeSettings": {
                           "paramValidationRules": [
                             {
-                              "message": "Enter a positive decimal rate with a dot; use the billed/compressed GB-month price, not the ingestion price.",
+                              "message": "Use a positive dot-decimal rate such as 0.03 in the selected currency. No comma, currency sign or thousands separator.",
                               "match": true,
                               "regExp": "^(?=.*[1-9])(?:0|[1-9][0-9]*)(?:[.][0-9]+)?$"
                             }
@@ -2571,7 +2582,9 @@
                             "options": {
                               "minimumFractionDigits": 2,
                               "maximumFractionDigits": 4,
-                              "style": "decimal"
+                              "style": "currency",
+                              "currency": "USD",
+                              "useGrouping": false
                             }
                           },
                           "formatter": 0,
@@ -2729,15 +2742,15 @@
                         },
                         {
                           "columnId": "CurrentMonthlyCost",
-                          "label": "Current / month"
+                          "label": "Est. current Lake spend (USD/mo)"
                         },
                         {
                           "columnId": "ProposedMonthlyCost",
-                          "label": "Proposed / month"
+                          "label": "Forecast Lake spend (USD/mo)"
                         },
                         {
                           "columnId": "AdditionalMonthlyCost",
-                          "label": "Extra / month"
+                          "label": "Monthly difference (USD)"
                         },
                         {
                           "columnId": "CurrentLakeBilledGB",
@@ -2881,12 +2894,17 @@
                       "durationMs": 7862400000
                     },
                     "showExportToExcel": true,
-                    "title": "💰 2. Review the selected-table total",
+                    "title": "💰 2. Monthly Lake spend - selected tables (USD)",
                     "size": 4
                   },
                   "styleSettings": {
                     "margin": "12px 0 20px",
                     "padding": "0"
+                  },
+                  "conditionalVisibility": {
+                    "parameterName": "CostCurrency",
+                    "comparison": "isEqualTo",
+                    "value": "USD"
                   }
                 },
                 {
@@ -2902,7 +2920,9 @@
                             "options": {
                               "minimumFractionDigits": 2,
                               "maximumFractionDigits": 4,
-                              "style": "decimal"
+                              "style": "currency",
+                              "currency": "USD",
+                              "useGrouping": false
                             }
                           },
                           "formatter": 0,
@@ -3076,15 +3096,15 @@
                         },
                         {
                           "columnId": "CurrentMonthlyCost",
-                          "label": "Current / month"
+                          "label": "Est. current Lake spend (USD/mo)"
                         },
                         {
                           "columnId": "ProposedMonthlyCost",
-                          "label": "Proposed / month"
+                          "label": "Forecast Lake spend (USD/mo)"
                         },
                         {
                           "columnId": "AdditionalMonthlyCost",
-                          "label": "Extra / month"
+                          "label": "Monthly difference (USD)"
                         },
                         {
                           "columnId": "CurrentLakeBilledGB",
@@ -3228,13 +3248,711 @@
                       "durationMs": 7862400000
                     },
                     "showExportToExcel": true,
-                    "title": "📊 3. Compare monthly storage by table",
+                    "title": "📊 3. Monthly Lake spend by table (USD)",
                     "size": 0,
                     "noDataMessage": "Select tables in the cost inventory above. This selection is separate from the bulk write selection."
                   },
                   "styleSettings": {
                     "margin": "12px 0 20px",
                     "padding": "0"
+                  },
+                  "conditionalVisibility": {
+                    "parameterName": "CostCurrency",
+                    "comparison": "isEqualTo",
+                    "value": "USD"
+                  }
+                },
+                {
+                  "name": "CostSummary-EUR",
+                  "type": 3,
+                  "content": {
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "minimumFractionDigits": 2,
+                              "maximumFractionDigits": 4,
+                              "style": "currency",
+                              "currency": "EUR",
+                              "useGrouping": false
+                            }
+                          },
+                          "formatter": 0,
+                          "columnMatch": ".*MonthlyCost"
+                        },
+                        {
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 4
+                            }
+                          },
+                          "formatter": 0,
+                          "columnMatch": ".*GB.*"
+                        },
+                        {
+                          "formatter": 5,
+                          "columnMatch": "CustomColumns"
+                        },
+                        {
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "thresholdValue": "INCREASE",
+                                "representation": "success",
+                                "operator": "==",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "operator": "Default",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          },
+                          "formatter": 18,
+                          "columnMatch": "Decision"
+                        },
+                        {
+                          "formatOptions": {
+                            "customColumnWidthSetting": "28ch"
+                          },
+                          "formatter": 0,
+                          "columnMatch": "TableName"
+                        }
+                      ],
+                      "filter": false,
+                      "labelSettings": [
+                        {
+                          "columnId": "TableName",
+                          "label": "Table name"
+                        },
+                        {
+                          "columnId": "APIPlan",
+                          "label": "Plan"
+                        },
+                        {
+                          "columnId": "TableSubType",
+                          "label": "Subtype"
+                        },
+                        {
+                          "columnId": "TableType",
+                          "label": "Table type"
+                        },
+                        {
+                          "columnId": "AnalyticsDays",
+                          "label": "Analytics (days)"
+                        },
+                        {
+                          "columnId": "TotalDays",
+                          "label": "Current total (days)"
+                        },
+                        {
+                          "columnId": "CurrentTotalDays",
+                          "label": "Current total (days)"
+                        },
+                        {
+                          "columnId": "ProposedTotalDays",
+                          "label": "Proposed total (days)"
+                        },
+                        {
+                          "columnId": "TargetDays",
+                          "label": "Target (days)"
+                        },
+                        {
+                          "columnId": "AdditionalDays",
+                          "label": "Added days"
+                        },
+                        {
+                          "columnId": "AnalyticsInherited",
+                          "label": "Inherits analytics"
+                        },
+                        {
+                          "columnId": "TotalInherited",
+                          "label": "Inherits total"
+                        },
+                        {
+                          "columnId": "ResourceId",
+                          "label": "Resource"
+                        },
+                        {
+                          "columnId": "SelectedCount",
+                          "label": "Selected"
+                        },
+                        {
+                          "columnId": "IncreaseCount",
+                          "label": "To increase"
+                        },
+                        {
+                          "columnId": "SelectedTables",
+                          "label": "Selected tables"
+                        },
+                        {
+                          "columnId": "EstimatedTables",
+                          "label": "Estimated"
+                        },
+                        {
+                          "columnId": "UnestimatedTables",
+                          "label": "Without estimate"
+                        },
+                        {
+                          "columnId": "TablesToIncrease",
+                          "label": "Tables to update"
+                        },
+                        {
+                          "columnId": "DeploymentName",
+                          "label": "Deployment name"
+                        },
+                        {
+                          "columnId": "State",
+                          "label": "State"
+                        },
+                        {
+                          "columnId": "Decision",
+                          "label": "Decision"
+                        },
+                        {
+                          "columnId": "EstimateStatus",
+                          "label": "Estimate status"
+                        },
+                        {
+                          "columnId": "MeasuredGB",
+                          "label": "Observed volume (GB)"
+                        },
+                        {
+                          "columnId": "AverageGBPerDay",
+                          "label": "Average GB / day"
+                        },
+                        {
+                          "columnId": "ObservedVolumeGB",
+                          "label": "Observed volume (GB)"
+                        },
+                        {
+                          "columnId": "CurrentMonthlyCost",
+                          "label": "Est. current Lake spend (EUR/mo)"
+                        },
+                        {
+                          "columnId": "ProposedMonthlyCost",
+                          "label": "Forecast Lake spend (EUR/mo)"
+                        },
+                        {
+                          "columnId": "AdditionalMonthlyCost",
+                          "label": "Monthly difference (EUR)"
+                        },
+                        {
+                          "columnId": "CurrentLakeBilledGB",
+                          "label": "Current billed GB"
+                        },
+                        {
+                          "columnId": "ProposedLakeBilledGB",
+                          "label": "Proposed billed GB"
+                        },
+                        {
+                          "columnId": "CurrentPaidLakeDays",
+                          "label": "Current paid days"
+                        },
+                        {
+                          "columnId": "ProposedPaidLakeDays",
+                          "label": "Proposed paid days"
+                        },
+                        {
+                          "columnId": "ObservationDays",
+                          "label": "Window (days)"
+                        },
+                        {
+                          "columnId": "DaysWithUsage",
+                          "label": "Days with activity"
+                        },
+                        {
+                          "columnId": "ObservationNote",
+                          "label": "Volume coverage"
+                        },
+                        {
+                          "columnId": "ScenarioNote",
+                          "label": "Scenario"
+                        },
+                        {
+                          "columnId": "BillingBasis",
+                          "label": "Billing basis"
+                        },
+                        {
+                          "columnId": "LastUsage",
+                          "label": "Last observed activity"
+                        },
+                        {
+                          "columnId": "BeforeSubtype",
+                          "label": "Subtype before"
+                        },
+                        {
+                          "columnId": "AfterSubtype",
+                          "label": "Subtype after"
+                        },
+                        {
+                          "columnId": "BeforeAnalyticsDays",
+                          "label": "Analytics before"
+                        },
+                        {
+                          "columnId": "AfterAnalyticsDays",
+                          "label": "Analytics after"
+                        },
+                        {
+                          "columnId": "BeforeTotalDays",
+                          "label": "Total before"
+                        },
+                        {
+                          "columnId": "AfterTotalDays",
+                          "label": "Total after"
+                        },
+                        {
+                          "columnId": "AfterPlan",
+                          "label": "Plan after"
+                        },
+                        {
+                          "columnId": "StatusCode",
+                          "label": "HTTP status"
+                        },
+                        {
+                          "columnId": "EventTime",
+                          "label": "Event time"
+                        },
+                        {
+                          "columnId": "Operation",
+                          "label": "Operation"
+                        },
+                        {
+                          "columnId": "ActivityStatus",
+                          "label": "Activity status"
+                        },
+                        {
+                          "columnId": "CorrelationId",
+                          "label": "Correlation ID"
+                        },
+                        {
+                          "columnId": "EventId",
+                          "label": "Event ID"
+                        },
+                        {
+                          "columnId": "NextPage",
+                          "label": "Additional results"
+                        },
+                        {
+                          "columnId": "SchemaPreserved",
+                          "label": "Schema unchanged"
+                        },
+                        {
+                          "columnId": "SchemaSubmitted",
+                          "label": "Schema submitted"
+                        },
+                        {
+                          "columnId": "BatchNumber",
+                          "label": "Batch"
+                        },
+                        {
+                          "columnId": "BatchCount",
+                          "label": "Total batches"
+                        },
+                        {
+                          "columnId": "TableCount",
+                          "label": "Tables in this change"
+                        },
+                        {
+                          "columnId": "ReadHttpStatus",
+                          "label": "GET status"
+                        },
+                        {
+                          "columnId": "ErrorCode",
+                          "label": "Read error"
+                        },
+                        {
+                          "columnId": "ErrorMessage",
+                          "label": "Error details"
+                        }
+                      ],
+                      "rowLimit": 10000
+                    },
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "queryType": 0,
+                    "query": "let WorkspaceId = base64_decode_tostring('{Workspace:base64}');\r\nlet TargetText = base64_decode_tostring('{TargetDays:base64}');\r\nlet Target = tolong(TargetText);\r\nlet TargetValid = TargetText matches regex @\"^(?:[3-9][0-9]|[1-9][0-9]{2}|[1-3][0-9]{3}|4[0-2][0-9]{2}|43[0-7][0-9]|438[0-3])$\";\r\nlet WindowText = base64_decode_tostring('{CostWindowDays:base64}');\r\nlet WindowDays = tolong(WindowText);\r\nlet WindowValid = WindowText in ('7', '30', '90');\r\nlet RateText = base64_decode_tostring('{StorageRate:base64}');\r\nlet Rate = todouble(RateText);\r\nlet RateValid = RateText matches regex @\"^(?:0|[1-9][0-9]*)(?:[.][0-9]+)?$\" and Rate > 0 and isfinite(Rate);\r\nlet WindowEnd = startofday(now());\r\nlet WindowStart = datetime_add('day', -toint(WindowDays), WindowEnd);\r\nlet BillingCompression = 6.0;\r\nlet Selected = print Rows=dynamic([{CostSelection}])\r\n| mv-expand Row=Rows\r\n| project TableName=tostring(Row.TableName), APIPlan=tostring(Row.APIPlan),\r\n    AnalyticsDays=tolong(Row.AnalyticsDays), CurrentTotalDays=tolong(Row.TotalDays),\r\n    TableType=tostring(Row.TableType), State=tostring(Row.State), ResourceId=tostring(Row.ResourceId)\r\n| distinct *;\r\nlet Volume = Usage\r\n| where TimeGenerated >= WindowStart and TimeGenerated < WindowEnd\r\n| summarize UsageRecords=count(), VolumeMB=sum(Quantity),\r\n    InvalidVolumeRecords=countif(QuantityUnit !~ 'MBytes' or isnull(Quantity) or Quantity < 0 or not(isfinite(Quantity))),\r\n    DaysWithUsage=dcount(startofday(TimeGenerated)), LastUsage=max(TimeGenerated),\r\n    ObservedPlans=make_set(Plan, 8) by TableName=DataType;\r\nlet Forecast = Selected\r\n| join kind=leftouter Volume on TableName\r\n| extend ScopeMatches = WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n    and TableName matches regex @\"^[A-Za-z0-9_-]{4,63}$\"\r\n    and ResourceId =~ strcat(WorkspaceId, '/tables/', TableName)\r\n| extend ProposedTotalDays=iff(TargetValid and isnotnull(CurrentTotalDays), max_of(CurrentTotalDays, Target), long(null)),\r\n    AnalyticsAllowanceDays=case(APIPlan == 'Analytics', AnalyticsDays, APIPlan == 'Auxiliary', long(0), long(null)),\r\n    MeasuredGB=iff(UsageRecords > 0 and InvalidVolumeRecords == 0, VolumeMB / 1000.0, real(null))\r\n| extend AverageGBPerDay=iff(WindowValid, MeasuredGB / todouble(WindowDays), real(null)),\r\n    CurrentPaidLakeDays=max_of(CurrentTotalDays-AnalyticsAllowanceDays, long(0)),\r\n    ProposedPaidLakeDays=max_of(ProposedTotalDays-AnalyticsAllowanceDays, long(0))\r\n| extend EstimateStatus=case(\r\n    not(ScopeMatches), 'NO ESTIMATE: stale selection or wrong workspace - reselect tables',\r\n    not(TargetValid), 'NO ESTIMATE: target must be 30-4383 whole days',\r\n    not(WindowValid), 'NO ESTIMATE: choose a 7, 30 or 90 day observation window',\r\n    APIPlan !in ('Analytics', 'Auxiliary'), 'NO ESTIMATE: unsupported Lake plan',\r\n    TableType in ('SearchResults', 'RestoredLogs') or TableName endswith '_SRCH' or TableName endswith '_RST', 'NO ESTIMATE: search or restored table',\r\n    State != 'Succeeded', 'NO ESTIMATE: table settings are changing or unavailable',\r\n    isempty(TableType) or isnull(CurrentTotalDays) or CurrentTotalDays < 30 or CurrentTotalDays > 4383\r\n        or (APIPlan == 'Analytics' and (isnull(AnalyticsDays) or AnalyticsDays < 0 or AnalyticsDays > CurrentTotalDays)),\r\n        'NO ESTIMATE: incomplete or inconsistent retention settings',\r\n    isnull(UsageRecords) or UsageRecords == 0, 'NO ESTIMATE: no Usage records in the observation window',\r\n    InvalidVolumeRecords > 0 or not(isfinite(AverageGBPerDay)), 'NO ESTIMATE: invalid volume or unsupported units',\r\n    not(RateValid), 'NO ESTIMATE: enter your positive Lake storage rate per billed GB-month',\r\n    'ESTIMATE')\r\n| extend Estimable=EstimateStatus == 'ESTIMATE',\r\n    ObservationNote=case(\r\n        isnull(UsageRecords), 'No volume coverage; this does not mean the table has no stored data',\r\n        LastUsage < WindowEnd-2d, 'Stale activity: forecast assumes the observed daily average continues',\r\n        DaysWithUsage < WindowDays, 'Partial activity/coverage: average includes every day in the window',\r\n        'Full-window activity; constant daily volume assumed'),\r\n    ScenarioNote=iff(CurrentTotalDays >= Target, 'Already at/above target: no retention reduction modeled', 'Increase scenario'),\r\n    BillingBasis=iff(APIPlan == 'Auxiliary', 'Lake-only: all retained days modeled as billable', 'Mirrored Analytics: only days beyond analytics retention billed')\r\n| extend CurrentLakeBilledGB=iff(Estimable, AverageGBPerDay * CurrentPaidLakeDays / BillingCompression, real(null)),\r\n    ProposedLakeBilledGB=iff(Estimable, AverageGBPerDay * ProposedPaidLakeDays / BillingCompression, real(null))\r\n| extend CurrentMonthlyCost=CurrentLakeBilledGB * Rate, ProposedMonthlyCost=ProposedLakeBilledGB * Rate\r\n| extend AdditionalMonthlyCost=ProposedMonthlyCost-CurrentMonthlyCost\r\n| project TableName, APIPlan, AnalyticsDays, CurrentTotalDays, ProposedTotalDays,\r\n    MeasuredGB, AverageGBPerDay,\r\n    CurrentMonthlyCost, ProposedMonthlyCost, AdditionalMonthlyCost,\r\n    EstimateStatus, ObservationNote, ScenarioNote,\r\n    CurrentLakeBilledGB, ProposedLakeBilledGB, CurrentPaidLakeDays, ProposedPaidLakeDays,\r\n    ObservationDays=WindowDays, DaysWithUsage, BillingBasis, LastUsage,\r\n    ObservationStart=WindowStart, ObservationEndExclusive=WindowEnd, ObservedPlans, ResourceId, Estimable;\r\n\r\nForecast\r\n| summarize SelectedTables=count(), EstimatedTables=countif(Estimable), UnestimatedTables=countif(not(Estimable)),\r\n    ObservedVolumeGB=sum(MeasuredGB), CurrentSubtotal=sum(CurrentMonthlyCost),\r\n    ProposedSubtotal=sum(ProposedMonthlyCost), AdditionalSubtotal=sum(AdditionalMonthlyCost)\r\n| extend Complete=SelectedTables > 0 and UnestimatedTables == 0\r\n| project Status=case(SelectedTables == 0, 'Select tables above to calculate a storage forecast',\r\n    not(Complete), 'INCOMPLETE: total withheld because one or more selected tables have no estimate',\r\n    'ESTIMATED monthly storage - steady state, not an invoice'),\r\n    SelectedTables, EstimatedTables, UnestimatedTables, ObservedVolumeGB,\r\n    CurrentMonthlyCost=iff(Complete, CurrentSubtotal, real(null)),\r\n    ProposedMonthlyCost=iff(Complete, ProposedSubtotal, real(null)),\r\n    AdditionalMonthlyCost=iff(Complete, AdditionalSubtotal, real(null))",
+                    "showRefreshButton": true,
+                    "version": "KqlItem/1.0",
+                    "timeContext": {
+                      "durationMs": 7862400000
+                    },
+                    "showExportToExcel": true,
+                    "title": "💰 2. Monthly Lake spend - selected tables (EUR)",
+                    "size": 4
+                  },
+                  "styleSettings": {
+                    "margin": "12px 0 20px",
+                    "padding": "0"
+                  },
+                  "conditionalVisibility": {
+                    "parameterName": "CostCurrency",
+                    "comparison": "isEqualTo",
+                    "value": "EUR"
+                  }
+                },
+                {
+                  "name": "CostEstimate-EUR",
+                  "type": 3,
+                  "content": {
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "minimumFractionDigits": 2,
+                              "maximumFractionDigits": 4,
+                              "style": "currency",
+                              "currency": "EUR",
+                              "useGrouping": false
+                            }
+                          },
+                          "formatter": 0,
+                          "columnMatch": ".*MonthlyCost"
+                        },
+                        {
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 4
+                            }
+                          },
+                          "formatter": 0,
+                          "columnMatch": ".*GB.*"
+                        },
+                        {
+                          "formatter": 5,
+                          "columnMatch": "ResourceId"
+                        },
+                        {
+                          "formatter": 5,
+                          "columnMatch": "ObservedPlans"
+                        },
+                        {
+                          "formatter": 5,
+                          "columnMatch": "ObservationStart"
+                        },
+                        {
+                          "formatter": 5,
+                          "columnMatch": "ObservationEndExclusive"
+                        },
+                        {
+                          "formatter": 5,
+                          "columnMatch": "CustomColumns"
+                        },
+                        {
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "thresholdValue": "INCREASE",
+                                "representation": "success",
+                                "operator": "==",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "operator": "Default",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          },
+                          "formatter": 18,
+                          "columnMatch": "Decision"
+                        },
+                        {
+                          "formatOptions": {
+                            "customColumnWidthSetting": "28ch"
+                          },
+                          "formatter": 0,
+                          "columnMatch": "TableName"
+                        }
+                      ],
+                      "filter": true,
+                      "labelSettings": [
+                        {
+                          "columnId": "TableName",
+                          "label": "Table name"
+                        },
+                        {
+                          "columnId": "APIPlan",
+                          "label": "Plan"
+                        },
+                        {
+                          "columnId": "TableSubType",
+                          "label": "Subtype"
+                        },
+                        {
+                          "columnId": "TableType",
+                          "label": "Table type"
+                        },
+                        {
+                          "columnId": "AnalyticsDays",
+                          "label": "Analytics (days)"
+                        },
+                        {
+                          "columnId": "TotalDays",
+                          "label": "Current total (days)"
+                        },
+                        {
+                          "columnId": "CurrentTotalDays",
+                          "label": "Current total (days)"
+                        },
+                        {
+                          "columnId": "ProposedTotalDays",
+                          "label": "Proposed total (days)"
+                        },
+                        {
+                          "columnId": "TargetDays",
+                          "label": "Target (days)"
+                        },
+                        {
+                          "columnId": "AdditionalDays",
+                          "label": "Added days"
+                        },
+                        {
+                          "columnId": "AnalyticsInherited",
+                          "label": "Inherits analytics"
+                        },
+                        {
+                          "columnId": "TotalInherited",
+                          "label": "Inherits total"
+                        },
+                        {
+                          "columnId": "ResourceId",
+                          "label": "Resource"
+                        },
+                        {
+                          "columnId": "SelectedCount",
+                          "label": "Selected"
+                        },
+                        {
+                          "columnId": "IncreaseCount",
+                          "label": "To increase"
+                        },
+                        {
+                          "columnId": "SelectedTables",
+                          "label": "Selected tables"
+                        },
+                        {
+                          "columnId": "EstimatedTables",
+                          "label": "Estimated"
+                        },
+                        {
+                          "columnId": "UnestimatedTables",
+                          "label": "Without estimate"
+                        },
+                        {
+                          "columnId": "TablesToIncrease",
+                          "label": "Tables to update"
+                        },
+                        {
+                          "columnId": "DeploymentName",
+                          "label": "Deployment name"
+                        },
+                        {
+                          "columnId": "State",
+                          "label": "State"
+                        },
+                        {
+                          "columnId": "Decision",
+                          "label": "Decision"
+                        },
+                        {
+                          "columnId": "EstimateStatus",
+                          "label": "Estimate status"
+                        },
+                        {
+                          "columnId": "MeasuredGB",
+                          "label": "Observed volume (GB)"
+                        },
+                        {
+                          "columnId": "AverageGBPerDay",
+                          "label": "Average GB / day"
+                        },
+                        {
+                          "columnId": "ObservedVolumeGB",
+                          "label": "Observed volume (GB)"
+                        },
+                        {
+                          "columnId": "CurrentMonthlyCost",
+                          "label": "Est. current Lake spend (EUR/mo)"
+                        },
+                        {
+                          "columnId": "ProposedMonthlyCost",
+                          "label": "Forecast Lake spend (EUR/mo)"
+                        },
+                        {
+                          "columnId": "AdditionalMonthlyCost",
+                          "label": "Monthly difference (EUR)"
+                        },
+                        {
+                          "columnId": "CurrentLakeBilledGB",
+                          "label": "Current billed GB"
+                        },
+                        {
+                          "columnId": "ProposedLakeBilledGB",
+                          "label": "Proposed billed GB"
+                        },
+                        {
+                          "columnId": "CurrentPaidLakeDays",
+                          "label": "Current paid days"
+                        },
+                        {
+                          "columnId": "ProposedPaidLakeDays",
+                          "label": "Proposed paid days"
+                        },
+                        {
+                          "columnId": "ObservationDays",
+                          "label": "Window (days)"
+                        },
+                        {
+                          "columnId": "DaysWithUsage",
+                          "label": "Days with activity"
+                        },
+                        {
+                          "columnId": "ObservationNote",
+                          "label": "Volume coverage"
+                        },
+                        {
+                          "columnId": "ScenarioNote",
+                          "label": "Scenario"
+                        },
+                        {
+                          "columnId": "BillingBasis",
+                          "label": "Billing basis"
+                        },
+                        {
+                          "columnId": "LastUsage",
+                          "label": "Last observed activity"
+                        },
+                        {
+                          "columnId": "BeforeSubtype",
+                          "label": "Subtype before"
+                        },
+                        {
+                          "columnId": "AfterSubtype",
+                          "label": "Subtype after"
+                        },
+                        {
+                          "columnId": "BeforeAnalyticsDays",
+                          "label": "Analytics before"
+                        },
+                        {
+                          "columnId": "AfterAnalyticsDays",
+                          "label": "Analytics after"
+                        },
+                        {
+                          "columnId": "BeforeTotalDays",
+                          "label": "Total before"
+                        },
+                        {
+                          "columnId": "AfterTotalDays",
+                          "label": "Total after"
+                        },
+                        {
+                          "columnId": "AfterPlan",
+                          "label": "Plan after"
+                        },
+                        {
+                          "columnId": "StatusCode",
+                          "label": "HTTP status"
+                        },
+                        {
+                          "columnId": "EventTime",
+                          "label": "Event time"
+                        },
+                        {
+                          "columnId": "Operation",
+                          "label": "Operation"
+                        },
+                        {
+                          "columnId": "ActivityStatus",
+                          "label": "Activity status"
+                        },
+                        {
+                          "columnId": "CorrelationId",
+                          "label": "Correlation ID"
+                        },
+                        {
+                          "columnId": "EventId",
+                          "label": "Event ID"
+                        },
+                        {
+                          "columnId": "NextPage",
+                          "label": "Additional results"
+                        },
+                        {
+                          "columnId": "SchemaPreserved",
+                          "label": "Schema unchanged"
+                        },
+                        {
+                          "columnId": "SchemaSubmitted",
+                          "label": "Schema submitted"
+                        },
+                        {
+                          "columnId": "BatchNumber",
+                          "label": "Batch"
+                        },
+                        {
+                          "columnId": "BatchCount",
+                          "label": "Total batches"
+                        },
+                        {
+                          "columnId": "TableCount",
+                          "label": "Tables in this change"
+                        },
+                        {
+                          "columnId": "ReadHttpStatus",
+                          "label": "GET status"
+                        },
+                        {
+                          "columnId": "ErrorCode",
+                          "label": "Read error"
+                        },
+                        {
+                          "columnId": "ErrorMessage",
+                          "label": "Error details"
+                        }
+                      ],
+                      "rowLimit": 10000
+                    },
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "queryType": 0,
+                    "query": "let WorkspaceId = base64_decode_tostring('{Workspace:base64}');\r\nlet TargetText = base64_decode_tostring('{TargetDays:base64}');\r\nlet Target = tolong(TargetText);\r\nlet TargetValid = TargetText matches regex @\"^(?:[3-9][0-9]|[1-9][0-9]{2}|[1-3][0-9]{3}|4[0-2][0-9]{2}|43[0-7][0-9]|438[0-3])$\";\r\nlet WindowText = base64_decode_tostring('{CostWindowDays:base64}');\r\nlet WindowDays = tolong(WindowText);\r\nlet WindowValid = WindowText in ('7', '30', '90');\r\nlet RateText = base64_decode_tostring('{StorageRate:base64}');\r\nlet Rate = todouble(RateText);\r\nlet RateValid = RateText matches regex @\"^(?:0|[1-9][0-9]*)(?:[.][0-9]+)?$\" and Rate > 0 and isfinite(Rate);\r\nlet WindowEnd = startofday(now());\r\nlet WindowStart = datetime_add('day', -toint(WindowDays), WindowEnd);\r\nlet BillingCompression = 6.0;\r\nlet Selected = print Rows=dynamic([{CostSelection}])\r\n| mv-expand Row=Rows\r\n| project TableName=tostring(Row.TableName), APIPlan=tostring(Row.APIPlan),\r\n    AnalyticsDays=tolong(Row.AnalyticsDays), CurrentTotalDays=tolong(Row.TotalDays),\r\n    TableType=tostring(Row.TableType), State=tostring(Row.State), ResourceId=tostring(Row.ResourceId)\r\n| distinct *;\r\nlet Volume = Usage\r\n| where TimeGenerated >= WindowStart and TimeGenerated < WindowEnd\r\n| summarize UsageRecords=count(), VolumeMB=sum(Quantity),\r\n    InvalidVolumeRecords=countif(QuantityUnit !~ 'MBytes' or isnull(Quantity) or Quantity < 0 or not(isfinite(Quantity))),\r\n    DaysWithUsage=dcount(startofday(TimeGenerated)), LastUsage=max(TimeGenerated),\r\n    ObservedPlans=make_set(Plan, 8) by TableName=DataType;\r\nlet Forecast = Selected\r\n| join kind=leftouter Volume on TableName\r\n| extend ScopeMatches = WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n    and TableName matches regex @\"^[A-Za-z0-9_-]{4,63}$\"\r\n    and ResourceId =~ strcat(WorkspaceId, '/tables/', TableName)\r\n| extend ProposedTotalDays=iff(TargetValid and isnotnull(CurrentTotalDays), max_of(CurrentTotalDays, Target), long(null)),\r\n    AnalyticsAllowanceDays=case(APIPlan == 'Analytics', AnalyticsDays, APIPlan == 'Auxiliary', long(0), long(null)),\r\n    MeasuredGB=iff(UsageRecords > 0 and InvalidVolumeRecords == 0, VolumeMB / 1000.0, real(null))\r\n| extend AverageGBPerDay=iff(WindowValid, MeasuredGB / todouble(WindowDays), real(null)),\r\n    CurrentPaidLakeDays=max_of(CurrentTotalDays-AnalyticsAllowanceDays, long(0)),\r\n    ProposedPaidLakeDays=max_of(ProposedTotalDays-AnalyticsAllowanceDays, long(0))\r\n| extend EstimateStatus=case(\r\n    not(ScopeMatches), 'NO ESTIMATE: stale selection or wrong workspace - reselect tables',\r\n    not(TargetValid), 'NO ESTIMATE: target must be 30-4383 whole days',\r\n    not(WindowValid), 'NO ESTIMATE: choose a 7, 30 or 90 day observation window',\r\n    APIPlan !in ('Analytics', 'Auxiliary'), 'NO ESTIMATE: unsupported Lake plan',\r\n    TableType in ('SearchResults', 'RestoredLogs') or TableName endswith '_SRCH' or TableName endswith '_RST', 'NO ESTIMATE: search or restored table',\r\n    State != 'Succeeded', 'NO ESTIMATE: table settings are changing or unavailable',\r\n    isempty(TableType) or isnull(CurrentTotalDays) or CurrentTotalDays < 30 or CurrentTotalDays > 4383\r\n        or (APIPlan == 'Analytics' and (isnull(AnalyticsDays) or AnalyticsDays < 0 or AnalyticsDays > CurrentTotalDays)),\r\n        'NO ESTIMATE: incomplete or inconsistent retention settings',\r\n    isnull(UsageRecords) or UsageRecords == 0, 'NO ESTIMATE: no Usage records in the observation window',\r\n    InvalidVolumeRecords > 0 or not(isfinite(AverageGBPerDay)), 'NO ESTIMATE: invalid volume or unsupported units',\r\n    not(RateValid), 'NO ESTIMATE: enter your positive Lake storage rate per billed GB-month',\r\n    'ESTIMATE')\r\n| extend Estimable=EstimateStatus == 'ESTIMATE',\r\n    ObservationNote=case(\r\n        isnull(UsageRecords), 'No volume coverage; this does not mean the table has no stored data',\r\n        LastUsage < WindowEnd-2d, 'Stale activity: forecast assumes the observed daily average continues',\r\n        DaysWithUsage < WindowDays, 'Partial activity/coverage: average includes every day in the window',\r\n        'Full-window activity; constant daily volume assumed'),\r\n    ScenarioNote=iff(CurrentTotalDays >= Target, 'Already at/above target: no retention reduction modeled', 'Increase scenario'),\r\n    BillingBasis=iff(APIPlan == 'Auxiliary', 'Lake-only: all retained days modeled as billable', 'Mirrored Analytics: only days beyond analytics retention billed')\r\n| extend CurrentLakeBilledGB=iff(Estimable, AverageGBPerDay * CurrentPaidLakeDays / BillingCompression, real(null)),\r\n    ProposedLakeBilledGB=iff(Estimable, AverageGBPerDay * ProposedPaidLakeDays / BillingCompression, real(null))\r\n| extend CurrentMonthlyCost=CurrentLakeBilledGB * Rate, ProposedMonthlyCost=ProposedLakeBilledGB * Rate\r\n| extend AdditionalMonthlyCost=ProposedMonthlyCost-CurrentMonthlyCost\r\n| project TableName, APIPlan, AnalyticsDays, CurrentTotalDays, ProposedTotalDays,\r\n    MeasuredGB, AverageGBPerDay,\r\n    CurrentMonthlyCost, ProposedMonthlyCost, AdditionalMonthlyCost,\r\n    EstimateStatus, ObservationNote, ScenarioNote,\r\n    CurrentLakeBilledGB, ProposedLakeBilledGB, CurrentPaidLakeDays, ProposedPaidLakeDays,\r\n    ObservationDays=WindowDays, DaysWithUsage, BillingBasis, LastUsage,\r\n    ObservationStart=WindowStart, ObservationEndExclusive=WindowEnd, ObservedPlans, ResourceId, Estimable;\r\n\r\nForecast\r\n| project-away Estimable\r\n| order by TableName asc",
+                    "showRefreshButton": true,
+                    "version": "KqlItem/1.0",
+                    "timeContext": {
+                      "durationMs": 7862400000
+                    },
+                    "showExportToExcel": true,
+                    "title": "📊 3. Monthly Lake spend by table (EUR)",
+                    "size": 0,
+                    "noDataMessage": "Select tables in the cost inventory above. This selection is separate from the bulk write selection."
+                  },
+                  "styleSettings": {
+                    "margin": "12px 0 20px",
+                    "padding": "0"
+                  },
+                  "conditionalVisibility": {
+                    "parameterName": "CostCurrency",
+                    "comparison": "isEqualTo",
+                    "value": "EUR"
                   }
                 }
               ],
