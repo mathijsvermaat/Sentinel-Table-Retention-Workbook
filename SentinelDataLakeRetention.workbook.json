@@ -4,7 +4,7 @@
       "name": "Introduction",
       "type": 1,
       "content": {
-        "json": "# 🛡️ Sentinel Data Lake Retention\r\n## Table retention & storage cost planning\r\n*Workbook revision: 3.1 · Automatic single / batched PATCH · No helper services*\r\n\r\n---\r\n\r\n### 📋 Purpose\r\n**Review table retention, plan storage costs and apply explicit updates** in one Data Lake-integrated workspace. Select one or many tables in the same view: the workbook automatically uses direct PATCH or groups retention-only PATCH requests into batches of up to 20. Only total retention is sent; no schema, subtype, plan or analytics-retention fields are submitted.\r\n\r\n> **⚠️ Before changing retention:** refresh your selection, avoid concurrent changes and verify the result in Defender. Longer retention may increase storage cost. Nothing is applied until you confirm."
+        "json": "# 🛡️ Sentinel Data Lake Retention\r\n## Table retention & storage cost planning\r\n*Workbook revision: 3.2 · Automatic single / batched PATCH · No helper services*\r\n\r\n---\r\n\r\n### 📋 Purpose\r\n**Review table retention, plan storage costs and apply explicit updates** in one Data Lake-integrated workspace. Select one or many tables in the same view: the workbook automatically uses direct PATCH or groups retention-only PATCH requests into batches of up to 20. Only total retention is sent; no schema, subtype, plan or analytics-retention fields are submitted.\r\n\r\n> **⚠️ Before changing retention:** refresh your selection, avoid concurrent changes and verify the result in Defender. Longer retention may increase storage cost. Nothing is applied until you confirm."
       },
       "styleSettings": {
         "margin": "8px 0",
@@ -48,7 +48,7 @@
       },
       "type": 1,
       "content": {
-        "json": "### 🎯 Key objectives\r\n- **Plan retention:** compare existing settings with a target of 180, 270, 365 days or more.\r\n- **Update deliberately:** choose explicit table candidates, review the exact request and confirm.\r\n- **Forecast storage:** estimate the ongoing Lake storage cost without adding ingestion charges.\r\n- **Verify results:** compare read-back with Defender before treating an update as complete.\r\n\r\n### 🧭 Automatic request selection\r\n| Eligible tables | Request | Confirmation |\r\n|---|---|---|\r\n| **One** | Direct PATCH of total retention only. | One prepared change |\r\n| **Several** | POST /batch with up to 20 independent retention-only PATCH requests. | One confirmation per batch |\r\n\r\nAny, Classic and DCR-based subtypes use the same path. No dropdown or separate single-table tab is needed. A partial batch failure never rolls back successful members; inspect fresh read-back for every table.\r\n\r\n### 📊 Data sources\r\n| Source | Purpose |\r\n|---|---|\r\n| Azure Resource Graph | Discover the subscription's Log Analytics workspaces. |\r\n| ARM Tables API | Read plan, subtype and retention; submit explicitly confirmed updates. |\r\n| `Usage` | Hourly per-table volume for the storage forecast—not physical Lake size. |\r\n| ARM deployment history | Inspect runs from older versions only; new changes create no deployments. |\r\n| Azure Activity Log | Optional recent operation/status evidence for the selected table; no log export needed. |\r\n\r\n### 🔐 Access & safeguards\r\n- **PATCH:** table read/write and workspace query permissions. No deployment permission is needed.\r\n- **Current updates:** table read/write permission only; no deployment permission or helper identity is needed. Historical deployment lookup requires its own read access.\r\n- **Cost planning:** reads hourly `Usage` aggregates, not each table's log records.\r\n- **Verification:** table read permission; the optional recent-activity view additionally needs Activity Log read access.\r\n- Requests use your portal identity and Azure RBAC. No secrets or extra automation services are embedded.\r\n- Basic-plan, search-result and restored tables are excluded from the write workflow. XDR-only tables outside the workspace are not listed.\r\n- Work in one workspace at a time. Search only filters the display; it does not clear selections. Refresh and reselect before another change.\r\n- Snapshot checks are not atomic. Refresh before confirming and avoid concurrent administration. Batched PATCH does not add an execution-time conditional guard.\r\n\r\n### 👥 Intended audience\r\nSOC engineers, Sentinel administrators and teams planning retention or compliance requirements.\r\n\r\n---"
+        "json": "### 🎯 Key objectives\r\n- **Plan retention:** compare existing settings with a target of 180, 270, 365 days or more.\r\n- **Update deliberately:** choose explicit table candidates, review the exact request and confirm.\r\n- **Forecast storage:** estimate the ongoing Lake storage cost without adding ingestion charges.\r\n- **Verify results:** compare read-back with Defender before treating an update as complete.\r\n\r\n### 🧭 Automatic request selection\r\n| Eligible tables | Request | Confirmation |\r\n|---|---|---|\r\n| **One** | Direct PATCH of total retention only. | One prepared change |\r\n| **Several** | POST /batch with up to 20 independent retention-only PATCH requests. | One confirmation per batch |\r\n\r\nAny, Classic and DCR-based subtypes use the same path. No dropdown or separate single-table tab is needed. A partial batch failure never rolls back successful members; inspect fresh read-back for every table.\r\n\r\n### 📊 Data sources\r\n| Source | Purpose |\r\n|---|---|\r\n| Azure Resource Graph | Discover the subscription's Log Analytics workspaces. |\r\n| ARM Tables API | Read plan, subtype and retention; submit explicitly confirmed updates. |\r\n| `Usage` | Hourly per-table volume for the storage forecast—not physical Lake size. |\r\n| Azure Activity Log | Recent operation/status evidence shown automatically for the selected table; no log export needed. |\r\n\r\n### 🔐 Access & safeguards\r\n- **PATCH:** table read/write and workspace query permissions. No deployment permission is needed.\r\n- **Current updates:** table read/write permission only; no deployment permission or helper identity is needed.\r\n- **Cost planning:** reads hourly `Usage` aggregates, not each table's log records.\r\n- **Verification:** table read permission for current settings and Activity Log read access for recent activity. An activity permission error is separate from the table read-back.\r\n- Requests use your portal identity and Azure RBAC. No secrets or extra automation services are embedded.\r\n- Basic-plan, search-result and restored tables are excluded from the write workflow. XDR-only tables outside the workspace are not listed.\r\n- Work in one workspace at a time. Search only filters the display; it does not clear selections. Refresh and reselect before another change.\r\n- Snapshot checks are not atomic. Refresh before confirming and avoid concurrent administration. Batched PATCH does not add an execution-time conditional guard.\r\n\r\n### 👥 Intended audience\r\nSOC engineers, Sentinel administrators and teams planning retention or compliance requirements.\r\n\r\n---"
       },
       "styleSettings": {
         "margin": "8px 0",
@@ -153,35 +153,6 @@
       "type": 12,
       "content": {
         "items": [
-          {
-            "name": "Scope",
-            "type": 9,
-            "content": {
-              "parameters": [
-                {
-                  "resourceType": "microsoft.operationalinsights/workspaces",
-                  "id": "460311d9-9b20-bbb6-e918-c64eeb7e3ffa",
-                  "crossComponentResources": [
-                    "{Workspace}"
-                  ],
-                  "type": 1,
-                  "query": "print WorkspaceId=base64_decode_tostring('{Workspace:base64}') | project Scope=extract(@\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\", 1, WorkspaceId)",
-                  "version": "KqlParameterItem/1.0",
-                  "queryType": 0,
-                  "value": "",
-                  "name": "ResourceGroupId",
-                  "label": "Resource group (internal)",
-                  "isHiddenWhenLocked": true
-                }
-              ],
-              "style": "above",
-              "version": "KqlParameterItem/1.0"
-            },
-            "styleSettings": {
-              "margin": "8px 0 16px",
-              "padding": "0"
-            }
-          },
           {
             "name": "Navigation",
             "type": 11,
@@ -3974,7 +3945,7 @@
                   "name": "VerificationInstructions",
                   "type": 1,
                   "content": {
-                    "json": "## 🔍 Verify retention - no run ID required\r\n**Direct and batched PATCH create no deployment run ID.** Select **Table settings / PATCH** to read current settings and optionally inspect recent Activity Log. On the Tables tab, **Read back this change** checks every table in the reviewed batch. Historical deployment lookup is retained only for runs created by older workbook versions.\r\n\r\n> **📌 Current state and audit evidence are different.** A matching total confirms the setting now, not which request caused it. Verify the intended target, wait for provisioning to finish, and refresh the same table in Defender. Nothing in this tab changes retention."
+                    "json": "## 🔍 Verify the table you changed\r\nSelect **exactly one table** below to load its **current settings** and **recent Azure Activity Log** automatically. When changing tables, uncheck the previous one first—search does not clear selections. No verification-mode selector, activity toggle or run ID is needed.\r\n\r\n> **📌 Current state and audit evidence are different.** A matching retention value confirms the setting now, not which request caused it. Refresh after completion and confirm the same table in Defender. Nothing in this tab changes retention."
                   },
                   "styleSettings": {
                     "margin": "8px 0",
@@ -3982,45 +3953,412 @@
                   }
                 },
                 {
-                  "name": "VerificationInputs",
-                  "type": 9,
+                  "name": "VerifyTableInventory",
+                  "type": 3,
                   "content": {
-                    "parameters": [
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "formatter": 5,
+                          "columnMatch": "CustomColumns"
+                        },
+                        {
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "thresholdValue": "INCREASE",
+                                "representation": "success",
+                                "operator": "==",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "operator": "Default",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          },
+                          "formatter": 18,
+                          "columnMatch": "Decision"
+                        },
+                        {
+                          "formatOptions": {
+                            "customColumnWidthSetting": "28ch"
+                          },
+                          "formatter": 0,
+                          "columnMatch": "TableName"
+                        }
+                      ],
+                      "filter": true,
+                      "labelSettings": [
+                        {
+                          "columnId": "TableName",
+                          "label": "Table name"
+                        },
+                        {
+                          "columnId": "APIPlan",
+                          "label": "Plan"
+                        },
+                        {
+                          "columnId": "TableSubType",
+                          "label": "Subtype"
+                        },
+                        {
+                          "columnId": "TableType",
+                          "label": "Table type"
+                        },
+                        {
+                          "columnId": "AnalyticsDays",
+                          "label": "Analytics (days)"
+                        },
+                        {
+                          "columnId": "TotalDays",
+                          "label": "Current total (days)"
+                        },
+                        {
+                          "columnId": "CurrentTotalDays",
+                          "label": "Current total (days)"
+                        },
+                        {
+                          "columnId": "ProposedTotalDays",
+                          "label": "Proposed total (days)"
+                        },
+                        {
+                          "columnId": "TargetDays",
+                          "label": "Target (days)"
+                        },
+                        {
+                          "columnId": "AdditionalDays",
+                          "label": "Added days"
+                        },
+                        {
+                          "columnId": "AnalyticsInherited",
+                          "label": "Inherits analytics"
+                        },
+                        {
+                          "columnId": "TotalInherited",
+                          "label": "Inherits total"
+                        },
+                        {
+                          "columnId": "ResourceId",
+                          "label": "Resource"
+                        },
+                        {
+                          "columnId": "SelectedCount",
+                          "label": "Selected"
+                        },
+                        {
+                          "columnId": "IncreaseCount",
+                          "label": "To increase"
+                        },
+                        {
+                          "columnId": "SelectedTables",
+                          "label": "Selected tables"
+                        },
+                        {
+                          "columnId": "EstimatedTables",
+                          "label": "Estimated"
+                        },
+                        {
+                          "columnId": "UnestimatedTables",
+                          "label": "Without estimate"
+                        },
+                        {
+                          "columnId": "TablesToIncrease",
+                          "label": "Tables to update"
+                        },
+                        {
+                          "columnId": "DeploymentName",
+                          "label": "Deployment name"
+                        },
+                        {
+                          "columnId": "State",
+                          "label": "State"
+                        },
+                        {
+                          "columnId": "Decision",
+                          "label": "Decision"
+                        },
+                        {
+                          "columnId": "EstimateStatus",
+                          "label": "Estimate status"
+                        },
+                        {
+                          "columnId": "MeasuredGB",
+                          "label": "Observed volume (GB)"
+                        },
+                        {
+                          "columnId": "AverageGBPerDay",
+                          "label": "Average GB / day"
+                        },
+                        {
+                          "columnId": "ObservedVolumeGB",
+                          "label": "Observed volume (GB)"
+                        },
+                        {
+                          "columnId": "CurrentMonthlyCost",
+                          "label": "Current / month"
+                        },
+                        {
+                          "columnId": "ProposedMonthlyCost",
+                          "label": "Proposed / month"
+                        },
+                        {
+                          "columnId": "AdditionalMonthlyCost",
+                          "label": "Extra / month"
+                        },
+                        {
+                          "columnId": "CurrentLakeBilledGB",
+                          "label": "Current billed GB"
+                        },
+                        {
+                          "columnId": "ProposedLakeBilledGB",
+                          "label": "Proposed billed GB"
+                        },
+                        {
+                          "columnId": "CurrentPaidLakeDays",
+                          "label": "Current paid days"
+                        },
+                        {
+                          "columnId": "ProposedPaidLakeDays",
+                          "label": "Proposed paid days"
+                        },
+                        {
+                          "columnId": "ObservationDays",
+                          "label": "Window (days)"
+                        },
+                        {
+                          "columnId": "DaysWithUsage",
+                          "label": "Days with activity"
+                        },
+                        {
+                          "columnId": "ObservationNote",
+                          "label": "Volume coverage"
+                        },
+                        {
+                          "columnId": "ScenarioNote",
+                          "label": "Scenario"
+                        },
+                        {
+                          "columnId": "BillingBasis",
+                          "label": "Billing basis"
+                        },
+                        {
+                          "columnId": "LastUsage",
+                          "label": "Last observed activity"
+                        },
+                        {
+                          "columnId": "BeforeSubtype",
+                          "label": "Subtype before"
+                        },
+                        {
+                          "columnId": "AfterSubtype",
+                          "label": "Subtype after"
+                        },
+                        {
+                          "columnId": "BeforeAnalyticsDays",
+                          "label": "Analytics before"
+                        },
+                        {
+                          "columnId": "AfterAnalyticsDays",
+                          "label": "Analytics after"
+                        },
+                        {
+                          "columnId": "BeforeTotalDays",
+                          "label": "Total before"
+                        },
+                        {
+                          "columnId": "AfterTotalDays",
+                          "label": "Total after"
+                        },
+                        {
+                          "columnId": "AfterPlan",
+                          "label": "Plan after"
+                        },
+                        {
+                          "columnId": "StatusCode",
+                          "label": "HTTP status"
+                        },
+                        {
+                          "columnId": "EventTime",
+                          "label": "Event time"
+                        },
+                        {
+                          "columnId": "Operation",
+                          "label": "Operation"
+                        },
+                        {
+                          "columnId": "ActivityStatus",
+                          "label": "Activity status"
+                        },
+                        {
+                          "columnId": "CorrelationId",
+                          "label": "Correlation ID"
+                        },
+                        {
+                          "columnId": "EventId",
+                          "label": "Event ID"
+                        },
+                        {
+                          "columnId": "NextPage",
+                          "label": "Additional results"
+                        },
+                        {
+                          "columnId": "SchemaPreserved",
+                          "label": "Schema unchanged"
+                        },
+                        {
+                          "columnId": "SchemaSubmitted",
+                          "label": "Schema submitted"
+                        },
+                        {
+                          "columnId": "BatchNumber",
+                          "label": "Batch"
+                        },
+                        {
+                          "columnId": "BatchCount",
+                          "label": "Total batches"
+                        },
+                        {
+                          "columnId": "TableCount",
+                          "label": "Tables in this change"
+                        },
+                        {
+                          "columnId": "ReadHttpStatus",
+                          "label": "GET status"
+                        },
+                        {
+                          "columnId": "ErrorCode",
+                          "label": "Read error"
+                        },
+                        {
+                          "columnId": "ErrorMessage",
+                          "label": "Error details"
+                        }
+                      ],
+                      "rowLimit": 10000
+                    },
+                    "queryType": 12,
+                    "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$.value\",\"columns\":[{\"columnid\":\"TableName\",\"path\":\"$.name\"},{\"columnid\":\"APIPlan\",\"path\":\"$.properties.plan\"},{\"columnid\":\"AnalyticsDays\",\"path\":\"$.properties.retentionInDays\"},{\"columnid\":\"TotalDays\",\"path\":\"$.properties.totalRetentionInDays\"},{\"columnid\":\"AnalyticsInherited\",\"path\":\"$.properties.retentionInDaysAsDefault\"},{\"columnid\":\"TotalInherited\",\"path\":\"$.properties.totalRetentionInDaysAsDefault\"},{\"columnid\":\"TableType\",\"path\":\"$.properties.schema.tableType\"},{\"columnid\":\"TableSubType\",\"path\":\"$.properties.schema.tableSubType\"},{\"columnid\":\"CustomColumns\",\"path\":\"$.properties.schema.columns\"},{\"columnid\":\"State\",\"path\":\"$.properties.provisioningState\"},{\"columnid\":\"ResourceId\",\"path\":\"$.id\"}]},\"type\":\"jsonpath\"}],\"path\":\"{Workspace}/tables\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2026-03-01\"}],\"method\":\"GET\"}",
+                    "showRefreshButton": true,
+                    "exportedParameters": [
                       {
-                        "id": "25f068ce-b38a-81e6-c25e-0af4573a1fc6",
-                        "type": 2,
-                        "version": "KqlParameterItem/1.0",
-                        "jsonData": "[{\"value\":\"Table\",\"label\":\"Table settings / PATCH\"},{\"value\":\"Deployment\",\"label\":\"Historical deployments (older workbook versions)\"}]",
-                        "value": "Table",
-                        "isRequired": true,
-                        "label": "Verify",
-                        "name": "VerifyMode"
+                        "fieldName": "TableName",
+                        "parameterName": "VerifyTableSelection",
+                        "parameterType": 1,
+                        "quote": "\"",
+                        "delimiter": ","
                       }
                     ],
-                    "style": "above",
-                    "version": "KqlParameterItem/1.0"
+                    "version": "KqlItem/1.0",
+                    "showExportToExcel": true,
+                    "exportMultipleValues": true,
+                    "title": "🔎 1. Select the table you changed",
+                    "size": 0
                   },
                   "styleSettings": {
-                    "margin": "8px 0 16px",
+                    "margin": "12px 0 20px",
                     "padding": "0"
                   }
                 },
                 {
-                  "name": "VerifyTableMode",
+                  "name": "VerifySelectionInputs",
+                  "type": 9,
+                  "content": {
+                    "version": "KqlParameterItem/1.0",
+                    "style": "above",
+                    "parameters": [
+                      {
+                        "id": "ab384d86-70f6-45c1-b28c-d82e351735e7",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "VerifyTableName",
+                        "type": 1,
+                        "value": "",
+                        "isHiddenWhenLocked": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "crossComponentResources": [
+                          "{Workspace}"
+                        ],
+                        "query": "let Names=dynamic([{VerifyTableSelection}]);\r\nlet Count=array_length(Names);\r\nlet Name=iff(Count == 1,tostring(Names[0]),'');\r\nlet Valid=Count == 1 and Name matches regex @\"^[A-Za-z0-9_-]{4,63}$\";\nprint TableName=iff(Valid,Name,'')"
+                      },
+                      {
+                        "id": "84628931-4a01-43e8-9ff7-d8dba08f3a5b",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "VerifySelectionStatus",
+                        "type": 1,
+                        "value": "Select one table to load its settings and activity.",
+                        "isHiddenWhenLocked": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "crossComponentResources": [
+                          "{Workspace}"
+                        ],
+                        "query": "let Names=dynamic([{VerifyTableSelection}]);\r\nlet Count=array_length(Names);\r\nlet Name=iff(Count == 1,tostring(Names[0]),'');\r\nlet Valid=Count == 1 and Name matches regex @\"^[A-Za-z0-9_-]{4,63}$\";\r\nprint Status=case(Count == 0,'Select one table to load its settings and activity.',\r\n    Count > 1,'Multiple tables selected: uncheck the previous table. Search does not clear selections. Settings and activity are hidden until exactly one table is selected.',\r\n    not(Valid),'Invalid table selection: clear the selection and choose a table from the inventory.',\r\n    strcat('Showing current settings and activity for ',Name,'.'))"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "VerifySelectionStatusText",
+                  "type": 1,
+                  "content": {
+                    "json": "**Selection:** {VerifySelectionStatus}"
+                  },
+                  "styleSettings": {
+                    "margin": "8px 0",
+                    "padding": "0"
+                  }
+                },
+                {
+                  "name": "VerifyTableDetails",
                   "conditionalVisibility": {
-                    "parameterName": "VerifyMode",
-                    "comparison": "isEqualTo",
-                    "value": "Table"
+                    "parameterName": "VerifyTableName",
+                    "comparison": "isNotEqualTo"
                   },
                   "type": 12,
                   "content": {
                     "items": [
                       {
-                        "name": "VerifyTableInventory",
+                        "name": "VerifyTableInstructions",
+                        "type": 1,
+                        "content": {
+                          "json": "### 🎯 Compare current settings with the intended target\r\n**Table:** `{VerifyTableName}` · **Target above:** **{TargetDays} days**\r\n\r\nRefresh **Current table settings** after the write completes. The total-retention icon compares the returned value with the target above. A different value is not automatically a failed request; it may be a newer or longer setting. **Provisioning state must also be Succeeded.**\r\n\r\nCompare analytics retention, plan, subtype and inheritance with your pre-change values. This tab does not invent a before-state snapshot or capture the last PATCH response. If cost-planning changed the target, restore the intended verification target before comparing."
+                        },
+                        "styleSettings": {
+                          "margin": "8px 0",
+                          "padding": "0"
+                        }
+                      },
+                      {
+                        "name": "VerifyCurrentTable",
                         "type": 3,
                         "content": {
                           "gridSettings": {
                             "formatters": [
+                              {
+                                "formatOptions": {
+                                  "thresholdsOptions": "icons",
+                                  "thresholdsGrid": [
+                                    {
+                                      "thresholdValue": "{TargetDays}",
+                                      "representation": "success",
+                                      "operator": "==",
+                                      "text": "{0}{1}"
+                                    },
+                                    {
+                                      "thresholdValue": null,
+                                      "representation": "2",
+                                      "operator": "Default",
+                                      "text": "{0}{1}"
+                                    }
+                                  ]
+                                },
+                                "formatter": 18,
+                                "columnMatch": "TotalDays"
+                              },
                               {
                                 "formatter": 5,
                                 "columnMatch": "CustomColumns"
@@ -4054,7 +4392,7 @@
                                 "columnMatch": "TableName"
                               }
                             ],
-                            "filter": true,
+                            "filter": false,
                             "labelSettings": [
                               {
                                 "columnId": "TableName",
@@ -4304,21 +4642,13 @@
                             "rowLimit": 10000
                           },
                           "queryType": 12,
-                          "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$.value\",\"columns\":[{\"columnid\":\"TableName\",\"path\":\"$.name\"},{\"columnid\":\"APIPlan\",\"path\":\"$.properties.plan\"},{\"columnid\":\"AnalyticsDays\",\"path\":\"$.properties.retentionInDays\"},{\"columnid\":\"TotalDays\",\"path\":\"$.properties.totalRetentionInDays\"},{\"columnid\":\"AnalyticsInherited\",\"path\":\"$.properties.retentionInDaysAsDefault\"},{\"columnid\":\"TotalInherited\",\"path\":\"$.properties.totalRetentionInDaysAsDefault\"},{\"columnid\":\"TableType\",\"path\":\"$.properties.schema.tableType\"},{\"columnid\":\"TableSubType\",\"path\":\"$.properties.schema.tableSubType\"},{\"columnid\":\"CustomColumns\",\"path\":\"$.properties.schema.columns\"},{\"columnid\":\"State\",\"path\":\"$.properties.provisioningState\"},{\"columnid\":\"ResourceId\",\"path\":\"$.id\"}]},\"type\":\"jsonpath\"}],\"path\":\"{Workspace}/tables\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2026-03-01\"}],\"method\":\"GET\"}",
+                          "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$\",\"columns\":[{\"columnid\":\"TableName\",\"path\":\"$.name\"},{\"columnid\":\"APIPlan\",\"path\":\"$.properties.plan\"},{\"columnid\":\"AnalyticsDays\",\"path\":\"$.properties.retentionInDays\"},{\"columnid\":\"TotalDays\",\"path\":\"$.properties.totalRetentionInDays\"},{\"columnid\":\"AnalyticsInherited\",\"path\":\"$.properties.retentionInDaysAsDefault\"},{\"columnid\":\"TotalInherited\",\"path\":\"$.properties.totalRetentionInDaysAsDefault\"},{\"columnid\":\"TableType\",\"path\":\"$.properties.schema.tableType\"},{\"columnid\":\"TableSubType\",\"path\":\"$.properties.schema.tableSubType\"},{\"columnid\":\"CustomColumns\",\"path\":\"$.properties.schema.columns\"},{\"columnid\":\"State\",\"path\":\"$.properties.provisioningState\"},{\"columnid\":\"ResourceId\",\"path\":\"$.id\"}]},\"type\":\"jsonpath\"}],\"path\":\"{Workspace}/tables/{VerifyTableName}\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2026-03-01\"}],\"method\":\"GET\"}",
                           "showRefreshButton": true,
-                          "exportedParameters": [
-                            {
-                              "defaultValue": "",
-                              "parameterName": "VerifyTableName",
-                              "parameterType": 1,
-                              "fieldName": "TableName"
-                            }
-                          ],
                           "version": "KqlItem/1.0",
                           "showExportToExcel": true,
-                          "exportMultipleValues": false,
-                          "title": "🔎 1. Select the table you changed",
-                          "size": 0
+                          "title": "🔄 2. Current table settings - refresh after your update",
+                          "size": 1,
+                          "noDataMessage": "No current table settings were returned. Refresh this panel or reselect the table. An empty response is not a successful verification."
                         },
                         "styleSettings": {
                           "margin": "12px 0 20px",
@@ -4326,19 +4656,15 @@
                         }
                       },
                       {
-                        "name": "VerifyTableDetails",
-                        "conditionalVisibility": {
-                          "parameterName": "VerifyTableName",
-                          "comparison": "isNotEqualTo"
-                        },
+                        "name": "VerifyActivitySection",
                         "type": 12,
                         "content": {
                           "items": [
                             {
-                              "name": "VerifyTableInstructions",
+                              "name": "VerifyActivityInstructions",
                               "type": 1,
                               "content": {
-                                "json": "### 🎯 Compare the current table with your intended target\r\n**Table:** `{VerifyTableName}` · **Target above:** **{TargetDays} days**\r\n\r\nRefresh the grid below after the write completes. The total-retention icon indicates whether the value **equals** the target above; a different value is not automatically a failed request (it may be a newer or longer setting). **Provisioning state must also be Succeeded.**\r\n\r\nCompare analytics retention, plan, subtype and inheritance with your pre-change values. This tab does not invent a \"before\" snapshot or capture the response of the last PATCH. If you changed the target while cost-planning, restore the intended verification target first."
+                                "json": "### 📜 Supporting evidence from Azure Activity Log\r\nRecent activity loads automatically for the selected table. The **Activity lookback** below defaults to 7 days. This uses the native ARM Activity Log API; no diagnostic setting, export or extra resource is required.\r\n\r\n**Permissions:** Activity Log read access is needed for this panel. A permission error here does not mean the retention update failed, and the independent current-settings panel above remains usable.\r\n\r\nEvents can take **3-20 minutes** to appear and are retained for **90 days**. Displayed times follow the portal's regional formatting; the request filter uses UTC. `tables/write` includes PATCH, PUT and other administrators' updates. Started/Accepted is not completion, and Succeeded alone does not disclose the retention value. Correlation IDs are supporting evidence, not an automatic link to your last workbook click.\r\n\r\nOnly the **first returned page** is displayed. A coverage warning below means more results exist; blank continuation means no next-page link was returned. Refresh activity for new events, or refresh the workbook to reset the lookback start. No events is not proof of failure, and nothing here retries or rolls back a write."
                               },
                               "styleSettings": {
                                 "margin": "8px 0",
@@ -4346,7 +4672,61 @@
                               }
                             },
                             {
-                              "name": "VerifyCurrentTable",
+                              "name": "VerifyActivityInputs",
+                              "type": 9,
+                              "content": {
+                                "parameters": [
+                                  {
+                                    "id": "2dc5f006-30a6-8741-ff9d-fdf8792cbce8",
+                                    "type": 2,
+                                    "version": "KqlParameterItem/1.0",
+                                    "jsonData": "[{\"value\":\"1\",\"label\":\"1 day\"},{\"value\":\"7\",\"label\":\"7 days\"},{\"value\":\"30\",\"label\":\"30 days\"},{\"value\":\"90\",\"label\":\"90 days\"}]",
+                                    "value": "7",
+                                    "isRequired": true,
+                                    "label": "Activity lookback",
+                                    "name": "VerifyActivityDays"
+                                  },
+                                  {
+                                    "resourceType": "microsoft.operationalinsights/workspaces",
+                                    "id": "c61ee49a-f562-693d-853f-a9a42a4eca73",
+                                    "crossComponentResources": [
+                                      "{Workspace}"
+                                    ],
+                                    "type": 1,
+                                    "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nprint WorkspaceId\r\n| where WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n| project Scope=extract(@\"(?i)^(/subscriptions/[0-9a-f-]{36})/\", 1, WorkspaceId)",
+                                    "version": "KqlParameterItem/1.0",
+                                    "queryType": 0,
+                                    "value": "",
+                                    "name": "VerifySubscriptionScope",
+                                    "label": "Activity scope (internal)",
+                                    "isHiddenWhenLocked": true
+                                  },
+                                  {
+                                    "resourceType": "microsoft.operationalinsights/workspaces",
+                                    "id": "beb4dec1-10c9-4578-5b35-cc440b3f34b6",
+                                    "crossComponentResources": [
+                                      "{Workspace}"
+                                    ],
+                                    "type": 1,
+                                    "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nlet TableName=base64_decode_tostring('{VerifyTableName:base64}');\r\nlet DaysText=base64_decode_tostring('{VerifyActivityDays:base64}');\r\nprint WorkspaceId, TableName, Days=toint(DaysText)\r\n| where WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n    and TableName matches regex @\"^[A-Za-z0-9_-]{4,63}$\" and DaysText in ('1','7','30','90')\r\n| extend Since=datetime_add('day', -Days, now())\r\n| project Filter=strcat(\"eventTimestamp ge '\", format_datetime(Since, \"yyyy-MM-dd\"), \"T\",\r\n    format_datetime(Since, \"HH:mm:ss\"), \"Z' and resourceUri eq '\", WorkspaceId, \"/tables/\", TableName, \"'\")",
+                                    "version": "KqlParameterItem/1.0",
+                                    "queryType": 0,
+                                    "value": "",
+                                    "name": "VerifyActivityFilter",
+                                    "label": "Activity filter (internal)",
+                                    "isHiddenWhenLocked": true
+                                  }
+                                ],
+                                "style": "above",
+                                "version": "KqlParameterItem/1.0"
+                              },
+                              "styleSettings": {
+                                "margin": "8px 0 16px",
+                                "padding": "0"
+                              }
+                            },
+                            {
+                              "name": "VerifyActivityLog",
                               "type": 3,
                               "content": {
                                 "gridSettings": {
@@ -4356,8 +4736,14 @@
                                         "thresholdsOptions": "icons",
                                         "thresholdsGrid": [
                                           {
-                                            "thresholdValue": "{TargetDays}",
+                                            "thresholdValue": "Succeeded",
                                             "representation": "success",
+                                            "operator": "==",
+                                            "text": "{0}{1}"
+                                          },
+                                          {
+                                            "thresholdValue": "Failed",
+                                            "representation": "3",
                                             "operator": "==",
                                             "text": "{0}{1}"
                                           },
@@ -4370,7 +4756,7 @@
                                         ]
                                       },
                                       "formatter": 18,
-                                      "columnMatch": "TotalDays"
+                                      "columnMatch": "ActivityStatus"
                                     },
                                     {
                                       "formatter": 5,
@@ -4655,1407 +5041,19 @@
                                   "rowLimit": 10000
                                 },
                                 "queryType": 12,
-                                "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$\",\"columns\":[{\"columnid\":\"TableName\",\"path\":\"$.name\"},{\"columnid\":\"APIPlan\",\"path\":\"$.properties.plan\"},{\"columnid\":\"AnalyticsDays\",\"path\":\"$.properties.retentionInDays\"},{\"columnid\":\"TotalDays\",\"path\":\"$.properties.totalRetentionInDays\"},{\"columnid\":\"AnalyticsInherited\",\"path\":\"$.properties.retentionInDaysAsDefault\"},{\"columnid\":\"TotalInherited\",\"path\":\"$.properties.totalRetentionInDaysAsDefault\"},{\"columnid\":\"TableType\",\"path\":\"$.properties.schema.tableType\"},{\"columnid\":\"TableSubType\",\"path\":\"$.properties.schema.tableSubType\"},{\"columnid\":\"CustomColumns\",\"path\":\"$.properties.schema.columns\"},{\"columnid\":\"State\",\"path\":\"$.properties.provisioningState\"},{\"columnid\":\"ResourceId\",\"path\":\"$.id\"}]},\"type\":\"jsonpath\"}],\"path\":\"{Workspace}/tables/{VerifyTableName}\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2026-03-01\"}],\"method\":\"GET\"}",
+                                "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$.value\",\"columns\":[{\"columnid\":\"EventTime\",\"path\":\"$.eventTimestamp\"},{\"columnid\":\"Operation\",\"path\":\"$.operationName.value\"},{\"columnid\":\"ActivityStatus\",\"path\":\"$.status.value\"},{\"columnid\":\"StatusCode\",\"path\":\"$.subStatus.value\"},{\"columnid\":\"CorrelationId\",\"path\":\"$.correlationId\"},{\"columnid\":\"EventId\",\"path\":\"$.eventDataId\"},{\"columnid\":\"ResourceId\",\"path\":\"$.resourceId\"}]},\"type\":\"jsonpath\"}],\"path\":\"{VerifySubscriptionScope}/providers/Microsoft.Insights/eventtypes/management/values\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2015-04-01\"},{\"key\":\"$filter\",\"value\":\"{VerifyActivityFilter}\"},{\"key\":\"$select\",\"value\":\"eventTimestamp,operationName,status,subStatus,correlationId,eventDataId,resourceId\"}],\"method\":\"GET\"}",
                                 "showRefreshButton": true,
                                 "version": "KqlItem/1.0",
                                 "showExportToExcel": true,
-                                "title": "🔄 2. Current settings - refresh for a fresh read",
-                                "size": 4
-                              },
-                              "styleSettings": {
-                                "margin": "12px 0 20px",
-                                "padding": "0"
-                              }
-                            },
-                            {
-                              "name": "VerifyActivityToggle",
-                              "type": 9,
-                              "content": {
-                                "parameters": [
+                                "sortBy": [
                                   {
-                                    "id": "56826082-526d-71b3-855c-bbf9fb9b0172",
-                                    "type": 10,
-                                    "version": "KqlParameterItem/1.0",
-                                    "jsonData": "[{\"value\":\"No\",\"label\":\"Hide\"},{\"value\":\"Yes\",\"label\":\"Show\"}]",
-                                    "value": "No",
-                                    "isRequired": true,
-                                    "label": "📜 Recent table activity",
-                                    "name": "ShowTableActivity"
+                                    "sortOrder": 2,
+                                    "itemKey": "EventTime"
                                   }
                                 ],
-                                "style": "above",
-                                "version": "KqlParameterItem/1.0"
-                              },
-                              "styleSettings": {
-                                "margin": "8px 0 16px",
-                                "padding": "0"
-                              }
-                            },
-                            {
-                              "name": "VerifyActivitySection",
-                              "conditionalVisibility": {
-                                "parameterName": "ShowTableActivity",
-                                "comparison": "isEqualTo",
-                                "value": "Yes"
-                              },
-                              "type": 12,
-                              "content": {
-                                "items": [
-                                  {
-                                    "name": "VerifyActivityInstructions",
-                                    "type": 1,
-                                    "content": {
-                                      "json": "### 📜 Supporting evidence from Azure Activity Log\r\nThis uses the native ARM Activity Log API for the selected table. No diagnostic setting, log export or extra Azure resource is required. Your identity needs Activity Log read permission; a permission error here does not invalidate the independent table read-back above.\r\n\r\nEvents may take **3-20 minutes** to appear and are retained for **90 days**. Displayed times follow the portal's date/time formatting; request filters use UTC. `tables/write` can represent PATCH, PUT, a deployment, or another administrator's update. Started/Accepted is not completion, and even Succeeded does not identify the retention value. Correlation IDs help investigate events, but this view cannot automatically associate one with your last workbook click.\r\n\r\nOnly the **first returned page** is shown; a coverage warning below means more pages exist. A blank continuation field means the API returned no next-page link. Refresh activity for newly arrived events, and refresh the whole workbook to reset the lookback start time. No events is not proof of failure. These logs do not restore or roll back anything."
-                                    },
-                                    "styleSettings": {
-                                      "margin": "8px 0",
-                                      "padding": "0"
-                                    }
-                                  },
-                                  {
-                                    "name": "VerifyActivityInputs",
-                                    "type": 9,
-                                    "content": {
-                                      "parameters": [
-                                        {
-                                          "id": "2dc5f006-30a6-8741-ff9d-fdf8792cbce8",
-                                          "type": 2,
-                                          "version": "KqlParameterItem/1.0",
-                                          "jsonData": "[{\"value\":\"1\",\"label\":\"1 day\"},{\"value\":\"7\",\"label\":\"7 days\"},{\"value\":\"30\",\"label\":\"30 days\"},{\"value\":\"90\",\"label\":\"90 days\"}]",
-                                          "value": "7",
-                                          "isRequired": true,
-                                          "label": "Activity lookback",
-                                          "name": "VerifyActivityDays"
-                                        },
-                                        {
-                                          "resourceType": "microsoft.operationalinsights/workspaces",
-                                          "id": "c61ee49a-f562-693d-853f-a9a42a4eca73",
-                                          "crossComponentResources": [
-                                            "{Workspace}"
-                                          ],
-                                          "type": 1,
-                                          "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nprint WorkspaceId\r\n| where WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n| project Scope=extract(@\"(?i)^(/subscriptions/[0-9a-f-]{36})/\", 1, WorkspaceId)",
-                                          "version": "KqlParameterItem/1.0",
-                                          "queryType": 0,
-                                          "value": "",
-                                          "name": "VerifySubscriptionScope",
-                                          "label": "Activity scope (internal)",
-                                          "isHiddenWhenLocked": true
-                                        },
-                                        {
-                                          "resourceType": "microsoft.operationalinsights/workspaces",
-                                          "id": "beb4dec1-10c9-4578-5b35-cc440b3f34b6",
-                                          "crossComponentResources": [
-                                            "{Workspace}"
-                                          ],
-                                          "type": 1,
-                                          "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nlet TableName=base64_decode_tostring('{VerifyTableName:base64}');\r\nlet DaysText=base64_decode_tostring('{VerifyActivityDays:base64}');\r\nprint WorkspaceId, TableName, Days=toint(DaysText)\r\n| where WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n    and TableName matches regex @\"^[A-Za-z0-9_-]{4,63}$\" and DaysText in ('1','7','30','90')\r\n| extend Since=datetime_add('day', -Days, now())\r\n| project Filter=strcat(\"eventTimestamp ge '\", format_datetime(Since, \"yyyy-MM-dd\"), \"T\",\r\n    format_datetime(Since, \"HH:mm:ss\"), \"Z' and resourceUri eq '\", WorkspaceId, \"/tables/\", TableName, \"'\")",
-                                          "version": "KqlParameterItem/1.0",
-                                          "queryType": 0,
-                                          "value": "",
-                                          "name": "VerifyActivityFilter",
-                                          "label": "Activity filter (internal)",
-                                          "isHiddenWhenLocked": true
-                                        }
-                                      ],
-                                      "style": "above",
-                                      "version": "KqlParameterItem/1.0"
-                                    },
-                                    "styleSettings": {
-                                      "margin": "8px 0 16px",
-                                      "padding": "0"
-                                    }
-                                  },
-                                  {
-                                    "name": "VerifyActivityLog",
-                                    "type": 3,
-                                    "content": {
-                                      "gridSettings": {
-                                        "formatters": [
-                                          {
-                                            "formatOptions": {
-                                              "thresholdsOptions": "icons",
-                                              "thresholdsGrid": [
-                                                {
-                                                  "thresholdValue": "Succeeded",
-                                                  "representation": "success",
-                                                  "operator": "==",
-                                                  "text": "{0}{1}"
-                                                },
-                                                {
-                                                  "thresholdValue": "Failed",
-                                                  "representation": "3",
-                                                  "operator": "==",
-                                                  "text": "{0}{1}"
-                                                },
-                                                {
-                                                  "thresholdValue": null,
-                                                  "representation": "2",
-                                                  "operator": "Default",
-                                                  "text": "{0}{1}"
-                                                }
-                                              ]
-                                            },
-                                            "formatter": 18,
-                                            "columnMatch": "ActivityStatus"
-                                          },
-                                          {
-                                            "formatter": 5,
-                                            "columnMatch": "CustomColumns"
-                                          },
-                                          {
-                                            "formatOptions": {
-                                              "thresholdsOptions": "icons",
-                                              "thresholdsGrid": [
-                                                {
-                                                  "thresholdValue": "INCREASE",
-                                                  "representation": "success",
-                                                  "operator": "==",
-                                                  "text": "{0}{1}"
-                                                },
-                                                {
-                                                  "thresholdValue": null,
-                                                  "representation": "unknown",
-                                                  "operator": "Default",
-                                                  "text": "{0}{1}"
-                                                }
-                                              ]
-                                            },
-                                            "formatter": 18,
-                                            "columnMatch": "Decision"
-                                          },
-                                          {
-                                            "formatOptions": {
-                                              "customColumnWidthSetting": "28ch"
-                                            },
-                                            "formatter": 0,
-                                            "columnMatch": "TableName"
-                                          }
-                                        ],
-                                        "filter": true,
-                                        "labelSettings": [
-                                          {
-                                            "columnId": "TableName",
-                                            "label": "Table name"
-                                          },
-                                          {
-                                            "columnId": "APIPlan",
-                                            "label": "Plan"
-                                          },
-                                          {
-                                            "columnId": "TableSubType",
-                                            "label": "Subtype"
-                                          },
-                                          {
-                                            "columnId": "TableType",
-                                            "label": "Table type"
-                                          },
-                                          {
-                                            "columnId": "AnalyticsDays",
-                                            "label": "Analytics (days)"
-                                          },
-                                          {
-                                            "columnId": "TotalDays",
-                                            "label": "Current total (days)"
-                                          },
-                                          {
-                                            "columnId": "CurrentTotalDays",
-                                            "label": "Current total (days)"
-                                          },
-                                          {
-                                            "columnId": "ProposedTotalDays",
-                                            "label": "Proposed total (days)"
-                                          },
-                                          {
-                                            "columnId": "TargetDays",
-                                            "label": "Target (days)"
-                                          },
-                                          {
-                                            "columnId": "AdditionalDays",
-                                            "label": "Added days"
-                                          },
-                                          {
-                                            "columnId": "AnalyticsInherited",
-                                            "label": "Inherits analytics"
-                                          },
-                                          {
-                                            "columnId": "TotalInherited",
-                                            "label": "Inherits total"
-                                          },
-                                          {
-                                            "columnId": "ResourceId",
-                                            "label": "Resource"
-                                          },
-                                          {
-                                            "columnId": "SelectedCount",
-                                            "label": "Selected"
-                                          },
-                                          {
-                                            "columnId": "IncreaseCount",
-                                            "label": "To increase"
-                                          },
-                                          {
-                                            "columnId": "SelectedTables",
-                                            "label": "Selected tables"
-                                          },
-                                          {
-                                            "columnId": "EstimatedTables",
-                                            "label": "Estimated"
-                                          },
-                                          {
-                                            "columnId": "UnestimatedTables",
-                                            "label": "Without estimate"
-                                          },
-                                          {
-                                            "columnId": "TablesToIncrease",
-                                            "label": "Tables to update"
-                                          },
-                                          {
-                                            "columnId": "DeploymentName",
-                                            "label": "Deployment name"
-                                          },
-                                          {
-                                            "columnId": "State",
-                                            "label": "State"
-                                          },
-                                          {
-                                            "columnId": "Decision",
-                                            "label": "Decision"
-                                          },
-                                          {
-                                            "columnId": "EstimateStatus",
-                                            "label": "Estimate status"
-                                          },
-                                          {
-                                            "columnId": "MeasuredGB",
-                                            "label": "Observed volume (GB)"
-                                          },
-                                          {
-                                            "columnId": "AverageGBPerDay",
-                                            "label": "Average GB / day"
-                                          },
-                                          {
-                                            "columnId": "ObservedVolumeGB",
-                                            "label": "Observed volume (GB)"
-                                          },
-                                          {
-                                            "columnId": "CurrentMonthlyCost",
-                                            "label": "Current / month"
-                                          },
-                                          {
-                                            "columnId": "ProposedMonthlyCost",
-                                            "label": "Proposed / month"
-                                          },
-                                          {
-                                            "columnId": "AdditionalMonthlyCost",
-                                            "label": "Extra / month"
-                                          },
-                                          {
-                                            "columnId": "CurrentLakeBilledGB",
-                                            "label": "Current billed GB"
-                                          },
-                                          {
-                                            "columnId": "ProposedLakeBilledGB",
-                                            "label": "Proposed billed GB"
-                                          },
-                                          {
-                                            "columnId": "CurrentPaidLakeDays",
-                                            "label": "Current paid days"
-                                          },
-                                          {
-                                            "columnId": "ProposedPaidLakeDays",
-                                            "label": "Proposed paid days"
-                                          },
-                                          {
-                                            "columnId": "ObservationDays",
-                                            "label": "Window (days)"
-                                          },
-                                          {
-                                            "columnId": "DaysWithUsage",
-                                            "label": "Days with activity"
-                                          },
-                                          {
-                                            "columnId": "ObservationNote",
-                                            "label": "Volume coverage"
-                                          },
-                                          {
-                                            "columnId": "ScenarioNote",
-                                            "label": "Scenario"
-                                          },
-                                          {
-                                            "columnId": "BillingBasis",
-                                            "label": "Billing basis"
-                                          },
-                                          {
-                                            "columnId": "LastUsage",
-                                            "label": "Last observed activity"
-                                          },
-                                          {
-                                            "columnId": "BeforeSubtype",
-                                            "label": "Subtype before"
-                                          },
-                                          {
-                                            "columnId": "AfterSubtype",
-                                            "label": "Subtype after"
-                                          },
-                                          {
-                                            "columnId": "BeforeAnalyticsDays",
-                                            "label": "Analytics before"
-                                          },
-                                          {
-                                            "columnId": "AfterAnalyticsDays",
-                                            "label": "Analytics after"
-                                          },
-                                          {
-                                            "columnId": "BeforeTotalDays",
-                                            "label": "Total before"
-                                          },
-                                          {
-                                            "columnId": "AfterTotalDays",
-                                            "label": "Total after"
-                                          },
-                                          {
-                                            "columnId": "AfterPlan",
-                                            "label": "Plan after"
-                                          },
-                                          {
-                                            "columnId": "StatusCode",
-                                            "label": "HTTP status"
-                                          },
-                                          {
-                                            "columnId": "EventTime",
-                                            "label": "Event time"
-                                          },
-                                          {
-                                            "columnId": "Operation",
-                                            "label": "Operation"
-                                          },
-                                          {
-                                            "columnId": "ActivityStatus",
-                                            "label": "Activity status"
-                                          },
-                                          {
-                                            "columnId": "CorrelationId",
-                                            "label": "Correlation ID"
-                                          },
-                                          {
-                                            "columnId": "EventId",
-                                            "label": "Event ID"
-                                          },
-                                          {
-                                            "columnId": "NextPage",
-                                            "label": "Additional results"
-                                          },
-                                          {
-                                            "columnId": "SchemaPreserved",
-                                            "label": "Schema unchanged"
-                                          },
-                                          {
-                                            "columnId": "SchemaSubmitted",
-                                            "label": "Schema submitted"
-                                          },
-                                          {
-                                            "columnId": "BatchNumber",
-                                            "label": "Batch"
-                                          },
-                                          {
-                                            "columnId": "BatchCount",
-                                            "label": "Total batches"
-                                          },
-                                          {
-                                            "columnId": "TableCount",
-                                            "label": "Tables in this change"
-                                          },
-                                          {
-                                            "columnId": "ReadHttpStatus",
-                                            "label": "GET status"
-                                          },
-                                          {
-                                            "columnId": "ErrorCode",
-                                            "label": "Read error"
-                                          },
-                                          {
-                                            "columnId": "ErrorMessage",
-                                            "label": "Error details"
-                                          }
-                                        ],
-                                        "rowLimit": 10000
-                                      },
-                                      "queryType": 12,
-                                      "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$.value\",\"columns\":[{\"columnid\":\"EventTime\",\"path\":\"$.eventTimestamp\"},{\"columnid\":\"Operation\",\"path\":\"$.operationName.value\"},{\"columnid\":\"ActivityStatus\",\"path\":\"$.status.value\"},{\"columnid\":\"StatusCode\",\"path\":\"$.subStatus.value\"},{\"columnid\":\"CorrelationId\",\"path\":\"$.correlationId\"},{\"columnid\":\"EventId\",\"path\":\"$.eventDataId\"},{\"columnid\":\"ResourceId\",\"path\":\"$.resourceId\"}]},\"type\":\"jsonpath\"}],\"path\":\"{VerifySubscriptionScope}/providers/Microsoft.Insights/eventtypes/management/values\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2015-04-01\"},{\"key\":\"$filter\",\"value\":\"{VerifyActivityFilter}\"},{\"key\":\"$select\",\"value\":\"eventTimestamp,operationName,status,subStatus,correlationId,eventDataId,resourceId\"}],\"method\":\"GET\"}",
-                                      "showRefreshButton": true,
-                                      "version": "KqlItem/1.0",
-                                      "showExportToExcel": true,
-                                      "sortBy": [
-                                        {
-                                          "sortOrder": 2,
-                                          "itemKey": "EventTime"
-                                        }
-                                      ],
-                                      "title": "📜 Recent table operations - first returned page",
-                                      "size": 0,
-                                      "noDataMessage": "No activity was returned for this table and window. Events can take 3-20 minutes to appear; this is not proof that no update happened. Check current settings above."
-                                    },
-                                    "styleSettings": {
-                                      "margin": "12px 0 20px",
-                                      "padding": "0"
-                                    }
-                                  },
-                                  {
-                                    "name": "VerifyActivityCoverage",
-                                    "type": 3,
-                                    "content": {
-                                      "gridSettings": {
-                                        "formatters": [
-                                          {
-                                            "formatter": 5,
-                                            "columnMatch": "CustomColumns"
-                                          },
-                                          {
-                                            "formatOptions": {
-                                              "thresholdsOptions": "icons",
-                                              "thresholdsGrid": [
-                                                {
-                                                  "thresholdValue": "INCREASE",
-                                                  "representation": "success",
-                                                  "operator": "==",
-                                                  "text": "{0}{1}"
-                                                },
-                                                {
-                                                  "thresholdValue": null,
-                                                  "representation": "unknown",
-                                                  "operator": "Default",
-                                                  "text": "{0}{1}"
-                                                }
-                                              ]
-                                            },
-                                            "formatter": 18,
-                                            "columnMatch": "Decision"
-                                          },
-                                          {
-                                            "formatOptions": {
-                                              "customColumnWidthSetting": "28ch"
-                                            },
-                                            "formatter": 0,
-                                            "columnMatch": "TableName"
-                                          }
-                                        ],
-                                        "filter": false,
-                                        "labelSettings": [
-                                          {
-                                            "columnId": "TableName",
-                                            "label": "Table name"
-                                          },
-                                          {
-                                            "columnId": "APIPlan",
-                                            "label": "Plan"
-                                          },
-                                          {
-                                            "columnId": "TableSubType",
-                                            "label": "Subtype"
-                                          },
-                                          {
-                                            "columnId": "TableType",
-                                            "label": "Table type"
-                                          },
-                                          {
-                                            "columnId": "AnalyticsDays",
-                                            "label": "Analytics (days)"
-                                          },
-                                          {
-                                            "columnId": "TotalDays",
-                                            "label": "Current total (days)"
-                                          },
-                                          {
-                                            "columnId": "CurrentTotalDays",
-                                            "label": "Current total (days)"
-                                          },
-                                          {
-                                            "columnId": "ProposedTotalDays",
-                                            "label": "Proposed total (days)"
-                                          },
-                                          {
-                                            "columnId": "TargetDays",
-                                            "label": "Target (days)"
-                                          },
-                                          {
-                                            "columnId": "AdditionalDays",
-                                            "label": "Added days"
-                                          },
-                                          {
-                                            "columnId": "AnalyticsInherited",
-                                            "label": "Inherits analytics"
-                                          },
-                                          {
-                                            "columnId": "TotalInherited",
-                                            "label": "Inherits total"
-                                          },
-                                          {
-                                            "columnId": "ResourceId",
-                                            "label": "Resource"
-                                          },
-                                          {
-                                            "columnId": "SelectedCount",
-                                            "label": "Selected"
-                                          },
-                                          {
-                                            "columnId": "IncreaseCount",
-                                            "label": "To increase"
-                                          },
-                                          {
-                                            "columnId": "SelectedTables",
-                                            "label": "Selected tables"
-                                          },
-                                          {
-                                            "columnId": "EstimatedTables",
-                                            "label": "Estimated"
-                                          },
-                                          {
-                                            "columnId": "UnestimatedTables",
-                                            "label": "Without estimate"
-                                          },
-                                          {
-                                            "columnId": "TablesToIncrease",
-                                            "label": "Tables to update"
-                                          },
-                                          {
-                                            "columnId": "DeploymentName",
-                                            "label": "Deployment name"
-                                          },
-                                          {
-                                            "columnId": "State",
-                                            "label": "State"
-                                          },
-                                          {
-                                            "columnId": "Decision",
-                                            "label": "Decision"
-                                          },
-                                          {
-                                            "columnId": "EstimateStatus",
-                                            "label": "Estimate status"
-                                          },
-                                          {
-                                            "columnId": "MeasuredGB",
-                                            "label": "Observed volume (GB)"
-                                          },
-                                          {
-                                            "columnId": "AverageGBPerDay",
-                                            "label": "Average GB / day"
-                                          },
-                                          {
-                                            "columnId": "ObservedVolumeGB",
-                                            "label": "Observed volume (GB)"
-                                          },
-                                          {
-                                            "columnId": "CurrentMonthlyCost",
-                                            "label": "Current / month"
-                                          },
-                                          {
-                                            "columnId": "ProposedMonthlyCost",
-                                            "label": "Proposed / month"
-                                          },
-                                          {
-                                            "columnId": "AdditionalMonthlyCost",
-                                            "label": "Extra / month"
-                                          },
-                                          {
-                                            "columnId": "CurrentLakeBilledGB",
-                                            "label": "Current billed GB"
-                                          },
-                                          {
-                                            "columnId": "ProposedLakeBilledGB",
-                                            "label": "Proposed billed GB"
-                                          },
-                                          {
-                                            "columnId": "CurrentPaidLakeDays",
-                                            "label": "Current paid days"
-                                          },
-                                          {
-                                            "columnId": "ProposedPaidLakeDays",
-                                            "label": "Proposed paid days"
-                                          },
-                                          {
-                                            "columnId": "ObservationDays",
-                                            "label": "Window (days)"
-                                          },
-                                          {
-                                            "columnId": "DaysWithUsage",
-                                            "label": "Days with activity"
-                                          },
-                                          {
-                                            "columnId": "ObservationNote",
-                                            "label": "Volume coverage"
-                                          },
-                                          {
-                                            "columnId": "ScenarioNote",
-                                            "label": "Scenario"
-                                          },
-                                          {
-                                            "columnId": "BillingBasis",
-                                            "label": "Billing basis"
-                                          },
-                                          {
-                                            "columnId": "LastUsage",
-                                            "label": "Last observed activity"
-                                          },
-                                          {
-                                            "columnId": "BeforeSubtype",
-                                            "label": "Subtype before"
-                                          },
-                                          {
-                                            "columnId": "AfterSubtype",
-                                            "label": "Subtype after"
-                                          },
-                                          {
-                                            "columnId": "BeforeAnalyticsDays",
-                                            "label": "Analytics before"
-                                          },
-                                          {
-                                            "columnId": "AfterAnalyticsDays",
-                                            "label": "Analytics after"
-                                          },
-                                          {
-                                            "columnId": "BeforeTotalDays",
-                                            "label": "Total before"
-                                          },
-                                          {
-                                            "columnId": "AfterTotalDays",
-                                            "label": "Total after"
-                                          },
-                                          {
-                                            "columnId": "AfterPlan",
-                                            "label": "Plan after"
-                                          },
-                                          {
-                                            "columnId": "StatusCode",
-                                            "label": "HTTP status"
-                                          },
-                                          {
-                                            "columnId": "EventTime",
-                                            "label": "Event time"
-                                          },
-                                          {
-                                            "columnId": "Operation",
-                                            "label": "Operation"
-                                          },
-                                          {
-                                            "columnId": "ActivityStatus",
-                                            "label": "Activity status"
-                                          },
-                                          {
-                                            "columnId": "CorrelationId",
-                                            "label": "Correlation ID"
-                                          },
-                                          {
-                                            "columnId": "EventId",
-                                            "label": "Event ID"
-                                          },
-                                          {
-                                            "columnId": "NextPage",
-                                            "label": "Additional results"
-                                          },
-                                          {
-                                            "columnId": "SchemaPreserved",
-                                            "label": "Schema unchanged"
-                                          },
-                                          {
-                                            "columnId": "SchemaSubmitted",
-                                            "label": "Schema submitted"
-                                          },
-                                          {
-                                            "columnId": "BatchNumber",
-                                            "label": "Batch"
-                                          },
-                                          {
-                                            "columnId": "BatchCount",
-                                            "label": "Total batches"
-                                          },
-                                          {
-                                            "columnId": "TableCount",
-                                            "label": "Tables in this change"
-                                          },
-                                          {
-                                            "columnId": "ReadHttpStatus",
-                                            "label": "GET status"
-                                          },
-                                          {
-                                            "columnId": "ErrorCode",
-                                            "label": "Read error"
-                                          },
-                                          {
-                                            "columnId": "ErrorMessage",
-                                            "label": "Error details"
-                                          }
-                                        ],
-                                        "rowLimit": 10000
-                                      },
-                                      "queryType": 12,
-                                      "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$\",\"columns\":[{\"substringReplace\":\"More activity exists: first page only. Shorten the window or inspect the Azure Activity Log for the full history.\",\"substringRegexMatch\":\".+\",\"columnid\":\"NextPage\",\"path\":\"$.nextLink\"}]},\"type\":\"jsonpath\"}],\"path\":\"{VerifySubscriptionScope}/providers/Microsoft.Insights/eventtypes/management/values\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2015-04-01\"},{\"key\":\"$filter\",\"value\":\"{VerifyActivityFilter}\"},{\"key\":\"$select\",\"value\":\"eventTimestamp,operationName,status,subStatus,correlationId,eventDataId,resourceId\"}],\"method\":\"GET\"}",
-                                      "showRefreshButton": true,
-                                      "version": "KqlItem/1.0",
-                                      "showExportToExcel": true,
-                                      "title": "Activity history coverage",
-                                      "size": 4,
-                                      "noDataMessage": "No additional activity page was reported."
-                                    },
-                                    "styleSettings": {
-                                      "margin": "12px 0 20px",
-                                      "padding": "0"
-                                    }
-                                  }
-                                ],
-                                "groupType": "editable",
-                                "version": "NotebookGroup/1.0"
-                              }
-                            }
-                          ],
-                          "exportParameters": true,
-                          "groupType": "editable",
-                          "version": "NotebookGroup/1.0"
-                        }
-                      }
-                    ],
-                    "exportParameters": true,
-                    "groupType": "editable",
-                    "version": "NotebookGroup/1.0"
-                  }
-                },
-                {
-                  "name": "VerifyDeploymentMode",
-                  "conditionalVisibility": {
-                    "parameterName": "VerifyMode",
-                    "comparison": "isEqualTo",
-                    "value": "Deployment"
-                  },
-                  "type": 12,
-                  "content": {
-                    "items": [
-                      {
-                        "name": "VerifyDeploymentInstructions",
-                        "type": 1,
-                        "content": {
-                          "json": "### 🗂️ Historical deployments only\r\nCurrent direct/batched PATCH actions do not create these records. This view is retained for older workbook deployments.\r\n\r\nThe list reads the first **100 resource-group deployments**, then shows parent workbook runs whose recorded workspace matches the selected workspace. Child deployments and unrelated workspaces are excluded. This is not an exhaustive history; older runs may require the resource group's deployment history.\r\n\r\nChoose a row to load its status, results and child-operation errors. Inspect **every** decision, **Schema unchanged**, and before/after value. If schema is false or subtype differs, stop further writes and investigate; there is no automatic rollback. `INCREASE` means requested, not verified. Missing outputs are not success. Older runs may omit schema checks or before-subtype—check their captured child parameters."
-                        },
-                        "styleSettings": {
-                          "margin": "8px 0",
-                          "padding": "0"
-                        }
-                      },
-                      {
-                        "name": "VerifyDeploymentInventory",
-                        "type": 3,
-                        "content": {
-                          "gridSettings": {
-                            "formatters": [
-                              {
-                                "formatter": 5,
-                                "columnMatch": "CustomColumns"
-                              },
-                              {
-                                "formatOptions": {
-                                  "thresholdsOptions": "icons",
-                                  "thresholdsGrid": [
-                                    {
-                                      "thresholdValue": "INCREASE",
-                                      "representation": "success",
-                                      "operator": "==",
-                                      "text": "{0}{1}"
-                                    },
-                                    {
-                                      "thresholdValue": null,
-                                      "representation": "unknown",
-                                      "operator": "Default",
-                                      "text": "{0}{1}"
-                                    }
-                                  ]
-                                },
-                                "formatter": 18,
-                                "columnMatch": "Decision"
-                              },
-                              {
-                                "formatOptions": {
-                                  "customColumnWidthSetting": "28ch"
-                                },
-                                "formatter": 0,
-                                "columnMatch": "TableName"
-                              }
-                            ],
-                            "filter": true,
-                            "labelSettings": [
-                              {
-                                "columnId": "TableName",
-                                "label": "Table name"
-                              },
-                              {
-                                "columnId": "APIPlan",
-                                "label": "Plan"
-                              },
-                              {
-                                "columnId": "TableSubType",
-                                "label": "Subtype"
-                              },
-                              {
-                                "columnId": "TableType",
-                                "label": "Table type"
-                              },
-                              {
-                                "columnId": "AnalyticsDays",
-                                "label": "Analytics (days)"
-                              },
-                              {
-                                "columnId": "TotalDays",
-                                "label": "Current total (days)"
-                              },
-                              {
-                                "columnId": "CurrentTotalDays",
-                                "label": "Current total (days)"
-                              },
-                              {
-                                "columnId": "ProposedTotalDays",
-                                "label": "Proposed total (days)"
-                              },
-                              {
-                                "columnId": "TargetDays",
-                                "label": "Target (days)"
-                              },
-                              {
-                                "columnId": "AdditionalDays",
-                                "label": "Added days"
-                              },
-                              {
-                                "columnId": "AnalyticsInherited",
-                                "label": "Inherits analytics"
-                              },
-                              {
-                                "columnId": "TotalInherited",
-                                "label": "Inherits total"
-                              },
-                              {
-                                "columnId": "ResourceId",
-                                "label": "Resource"
-                              },
-                              {
-                                "columnId": "SelectedCount",
-                                "label": "Selected"
-                              },
-                              {
-                                "columnId": "IncreaseCount",
-                                "label": "To increase"
-                              },
-                              {
-                                "columnId": "SelectedTables",
-                                "label": "Selected tables"
-                              },
-                              {
-                                "columnId": "EstimatedTables",
-                                "label": "Estimated"
-                              },
-                              {
-                                "columnId": "UnestimatedTables",
-                                "label": "Without estimate"
-                              },
-                              {
-                                "columnId": "TablesToIncrease",
-                                "label": "Tables to update"
-                              },
-                              {
-                                "columnId": "DeploymentName",
-                                "label": "Deployment name"
-                              },
-                              {
-                                "columnId": "State",
-                                "label": "State"
-                              },
-                              {
-                                "columnId": "Decision",
-                                "label": "Decision"
-                              },
-                              {
-                                "columnId": "EstimateStatus",
-                                "label": "Estimate status"
-                              },
-                              {
-                                "columnId": "MeasuredGB",
-                                "label": "Observed volume (GB)"
-                              },
-                              {
-                                "columnId": "AverageGBPerDay",
-                                "label": "Average GB / day"
-                              },
-                              {
-                                "columnId": "ObservedVolumeGB",
-                                "label": "Observed volume (GB)"
-                              },
-                              {
-                                "columnId": "CurrentMonthlyCost",
-                                "label": "Current / month"
-                              },
-                              {
-                                "columnId": "ProposedMonthlyCost",
-                                "label": "Proposed / month"
-                              },
-                              {
-                                "columnId": "AdditionalMonthlyCost",
-                                "label": "Extra / month"
-                              },
-                              {
-                                "columnId": "CurrentLakeBilledGB",
-                                "label": "Current billed GB"
-                              },
-                              {
-                                "columnId": "ProposedLakeBilledGB",
-                                "label": "Proposed billed GB"
-                              },
-                              {
-                                "columnId": "CurrentPaidLakeDays",
-                                "label": "Current paid days"
-                              },
-                              {
-                                "columnId": "ProposedPaidLakeDays",
-                                "label": "Proposed paid days"
-                              },
-                              {
-                                "columnId": "ObservationDays",
-                                "label": "Window (days)"
-                              },
-                              {
-                                "columnId": "DaysWithUsage",
-                                "label": "Days with activity"
-                              },
-                              {
-                                "columnId": "ObservationNote",
-                                "label": "Volume coverage"
-                              },
-                              {
-                                "columnId": "ScenarioNote",
-                                "label": "Scenario"
-                              },
-                              {
-                                "columnId": "BillingBasis",
-                                "label": "Billing basis"
-                              },
-                              {
-                                "columnId": "LastUsage",
-                                "label": "Last observed activity"
-                              },
-                              {
-                                "columnId": "BeforeSubtype",
-                                "label": "Subtype before"
-                              },
-                              {
-                                "columnId": "AfterSubtype",
-                                "label": "Subtype after"
-                              },
-                              {
-                                "columnId": "BeforeAnalyticsDays",
-                                "label": "Analytics before"
-                              },
-                              {
-                                "columnId": "AfterAnalyticsDays",
-                                "label": "Analytics after"
-                              },
-                              {
-                                "columnId": "BeforeTotalDays",
-                                "label": "Total before"
-                              },
-                              {
-                                "columnId": "AfterTotalDays",
-                                "label": "Total after"
-                              },
-                              {
-                                "columnId": "AfterPlan",
-                                "label": "Plan after"
-                              },
-                              {
-                                "columnId": "StatusCode",
-                                "label": "HTTP status"
-                              },
-                              {
-                                "columnId": "EventTime",
-                                "label": "Event time"
-                              },
-                              {
-                                "columnId": "Operation",
-                                "label": "Operation"
-                              },
-                              {
-                                "columnId": "ActivityStatus",
-                                "label": "Activity status"
-                              },
-                              {
-                                "columnId": "CorrelationId",
-                                "label": "Correlation ID"
-                              },
-                              {
-                                "columnId": "EventId",
-                                "label": "Event ID"
-                              },
-                              {
-                                "columnId": "NextPage",
-                                "label": "Additional results"
-                              },
-                              {
-                                "columnId": "SchemaPreserved",
-                                "label": "Schema unchanged"
-                              },
-                              {
-                                "columnId": "SchemaSubmitted",
-                                "label": "Schema submitted"
-                              },
-                              {
-                                "columnId": "BatchNumber",
-                                "label": "Batch"
-                              },
-                              {
-                                "columnId": "BatchCount",
-                                "label": "Total batches"
-                              },
-                              {
-                                "columnId": "TableCount",
-                                "label": "Tables in this change"
-                              },
-                              {
-                                "columnId": "ReadHttpStatus",
-                                "label": "GET status"
-                              },
-                              {
-                                "columnId": "ErrorCode",
-                                "label": "Read error"
-                              },
-                              {
-                                "columnId": "ErrorMessage",
-                                "label": "Error details"
-                              }
-                            ],
-                            "rowLimit": 10000
-                          },
-                          "queryType": 12,
-                          "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$.value[?(@.properties.parameters && @.properties.parameters.workspaceResourceId && @.properties.parameters.tables && @.properties.parameters.workspaceResourceId.value == \\\"{Workspace}\\\" && @.properties.parameters.tables.value)]\",\"columns\":[{\"columnid\":\"DeploymentName\",\"path\":\"$.name\"},{\"columnid\":\"Timestamp\",\"path\":\"$.properties.timestamp\"},{\"columnid\":\"State\",\"path\":\"$.properties.provisioningState\"},{\"columnid\":\"TargetDays\",\"path\":\"$.properties.parameters.targetDays.value\"},{\"columnid\":\"TablesToIncrease\",\"path\":\"$.properties.parameters.tables.value[*].name\"}]},\"type\":\"jsonpath\"}],\"path\":\"{ResourceGroupId}/providers/Microsoft.Resources/deployments\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2025-04-01\"},{\"key\":\"$top\",\"value\":\"100\"}],\"method\":\"GET\"}",
-                          "showRefreshButton": true,
-                          "exportedParameters": [
-                            {
-                              "defaultValue": "",
-                              "parameterName": "DeploymentName",
-                              "parameterType": 1,
-                              "fieldName": "DeploymentName"
-                            }
-                          ],
-                          "version": "KqlItem/1.0",
-                          "showExportToExcel": true,
-                          "exportMultipleValues": false,
-                          "title": "🗂️ Select a discovered workbook deployment",
-                          "size": 0,
-                          "noDataMessage": "No matching workbook deployment in the first 100 resource-group entries. PATCH does not create a deployment. For older batches, use the resource group deployment history."
-                        },
-                        "styleSettings": {
-                          "margin": "12px 0 20px",
-                          "padding": "0"
-                        }
-                      },
-                      {
-                        "name": "VerificationReadouts",
-                        "conditionalVisibility": {
-                          "parameterName": "DeploymentName",
-                          "comparison": "isNotEqualTo"
-                        },
-                        "type": 12,
-                        "content": {
-                          "items": [
-                            {
-                              "name": "DeploymentStatus",
-                              "type": 3,
-                              "content": {
-                                "gridSettings": {
-                                  "formatters": [
-                                    {
-                                      "formatter": 5,
-                                      "columnMatch": "CustomColumns"
-                                    },
-                                    {
-                                      "formatOptions": {
-                                        "thresholdsOptions": "icons",
-                                        "thresholdsGrid": [
-                                          {
-                                            "thresholdValue": "INCREASE",
-                                            "representation": "success",
-                                            "operator": "==",
-                                            "text": "{0}{1}"
-                                          },
-                                          {
-                                            "thresholdValue": null,
-                                            "representation": "unknown",
-                                            "operator": "Default",
-                                            "text": "{0}{1}"
-                                          }
-                                        ]
-                                      },
-                                      "formatter": 18,
-                                      "columnMatch": "Decision"
-                                    },
-                                    {
-                                      "formatOptions": {
-                                        "customColumnWidthSetting": "28ch"
-                                      },
-                                      "formatter": 0,
-                                      "columnMatch": "TableName"
-                                    }
-                                  ],
-                                  "filter": true,
-                                  "labelSettings": [
-                                    {
-                                      "columnId": "TableName",
-                                      "label": "Table name"
-                                    },
-                                    {
-                                      "columnId": "APIPlan",
-                                      "label": "Plan"
-                                    },
-                                    {
-                                      "columnId": "TableSubType",
-                                      "label": "Subtype"
-                                    },
-                                    {
-                                      "columnId": "TableType",
-                                      "label": "Table type"
-                                    },
-                                    {
-                                      "columnId": "AnalyticsDays",
-                                      "label": "Analytics (days)"
-                                    },
-                                    {
-                                      "columnId": "TotalDays",
-                                      "label": "Current total (days)"
-                                    },
-                                    {
-                                      "columnId": "CurrentTotalDays",
-                                      "label": "Current total (days)"
-                                    },
-                                    {
-                                      "columnId": "ProposedTotalDays",
-                                      "label": "Proposed total (days)"
-                                    },
-                                    {
-                                      "columnId": "TargetDays",
-                                      "label": "Target (days)"
-                                    },
-                                    {
-                                      "columnId": "AdditionalDays",
-                                      "label": "Added days"
-                                    },
-                                    {
-                                      "columnId": "AnalyticsInherited",
-                                      "label": "Inherits analytics"
-                                    },
-                                    {
-                                      "columnId": "TotalInherited",
-                                      "label": "Inherits total"
-                                    },
-                                    {
-                                      "columnId": "ResourceId",
-                                      "label": "Resource"
-                                    },
-                                    {
-                                      "columnId": "SelectedCount",
-                                      "label": "Selected"
-                                    },
-                                    {
-                                      "columnId": "IncreaseCount",
-                                      "label": "To increase"
-                                    },
-                                    {
-                                      "columnId": "SelectedTables",
-                                      "label": "Selected tables"
-                                    },
-                                    {
-                                      "columnId": "EstimatedTables",
-                                      "label": "Estimated"
-                                    },
-                                    {
-                                      "columnId": "UnestimatedTables",
-                                      "label": "Without estimate"
-                                    },
-                                    {
-                                      "columnId": "TablesToIncrease",
-                                      "label": "Tables to update"
-                                    },
-                                    {
-                                      "columnId": "DeploymentName",
-                                      "label": "Deployment name"
-                                    },
-                                    {
-                                      "columnId": "State",
-                                      "label": "State"
-                                    },
-                                    {
-                                      "columnId": "Decision",
-                                      "label": "Decision"
-                                    },
-                                    {
-                                      "columnId": "EstimateStatus",
-                                      "label": "Estimate status"
-                                    },
-                                    {
-                                      "columnId": "MeasuredGB",
-                                      "label": "Observed volume (GB)"
-                                    },
-                                    {
-                                      "columnId": "AverageGBPerDay",
-                                      "label": "Average GB / day"
-                                    },
-                                    {
-                                      "columnId": "ObservedVolumeGB",
-                                      "label": "Observed volume (GB)"
-                                    },
-                                    {
-                                      "columnId": "CurrentMonthlyCost",
-                                      "label": "Current / month"
-                                    },
-                                    {
-                                      "columnId": "ProposedMonthlyCost",
-                                      "label": "Proposed / month"
-                                    },
-                                    {
-                                      "columnId": "AdditionalMonthlyCost",
-                                      "label": "Extra / month"
-                                    },
-                                    {
-                                      "columnId": "CurrentLakeBilledGB",
-                                      "label": "Current billed GB"
-                                    },
-                                    {
-                                      "columnId": "ProposedLakeBilledGB",
-                                      "label": "Proposed billed GB"
-                                    },
-                                    {
-                                      "columnId": "CurrentPaidLakeDays",
-                                      "label": "Current paid days"
-                                    },
-                                    {
-                                      "columnId": "ProposedPaidLakeDays",
-                                      "label": "Proposed paid days"
-                                    },
-                                    {
-                                      "columnId": "ObservationDays",
-                                      "label": "Window (days)"
-                                    },
-                                    {
-                                      "columnId": "DaysWithUsage",
-                                      "label": "Days with activity"
-                                    },
-                                    {
-                                      "columnId": "ObservationNote",
-                                      "label": "Volume coverage"
-                                    },
-                                    {
-                                      "columnId": "ScenarioNote",
-                                      "label": "Scenario"
-                                    },
-                                    {
-                                      "columnId": "BillingBasis",
-                                      "label": "Billing basis"
-                                    },
-                                    {
-                                      "columnId": "LastUsage",
-                                      "label": "Last observed activity"
-                                    },
-                                    {
-                                      "columnId": "BeforeSubtype",
-                                      "label": "Subtype before"
-                                    },
-                                    {
-                                      "columnId": "AfterSubtype",
-                                      "label": "Subtype after"
-                                    },
-                                    {
-                                      "columnId": "BeforeAnalyticsDays",
-                                      "label": "Analytics before"
-                                    },
-                                    {
-                                      "columnId": "AfterAnalyticsDays",
-                                      "label": "Analytics after"
-                                    },
-                                    {
-                                      "columnId": "BeforeTotalDays",
-                                      "label": "Total before"
-                                    },
-                                    {
-                                      "columnId": "AfterTotalDays",
-                                      "label": "Total after"
-                                    },
-                                    {
-                                      "columnId": "AfterPlan",
-                                      "label": "Plan after"
-                                    },
-                                    {
-                                      "columnId": "StatusCode",
-                                      "label": "HTTP status"
-                                    },
-                                    {
-                                      "columnId": "EventTime",
-                                      "label": "Event time"
-                                    },
-                                    {
-                                      "columnId": "Operation",
-                                      "label": "Operation"
-                                    },
-                                    {
-                                      "columnId": "ActivityStatus",
-                                      "label": "Activity status"
-                                    },
-                                    {
-                                      "columnId": "CorrelationId",
-                                      "label": "Correlation ID"
-                                    },
-                                    {
-                                      "columnId": "EventId",
-                                      "label": "Event ID"
-                                    },
-                                    {
-                                      "columnId": "NextPage",
-                                      "label": "Additional results"
-                                    },
-                                    {
-                                      "columnId": "SchemaPreserved",
-                                      "label": "Schema unchanged"
-                                    },
-                                    {
-                                      "columnId": "SchemaSubmitted",
-                                      "label": "Schema submitted"
-                                    },
-                                    {
-                                      "columnId": "BatchNumber",
-                                      "label": "Batch"
-                                    },
-                                    {
-                                      "columnId": "BatchCount",
-                                      "label": "Total batches"
-                                    },
-                                    {
-                                      "columnId": "TableCount",
-                                      "label": "Tables in this change"
-                                    },
-                                    {
-                                      "columnId": "ReadHttpStatus",
-                                      "label": "GET status"
-                                    },
-                                    {
-                                      "columnId": "ErrorCode",
-                                      "label": "Read error"
-                                    },
-                                    {
-                                      "columnId": "ErrorMessage",
-                                      "label": "Error details"
-                                    }
-                                  ],
-                                  "rowLimit": 10000
-                                },
-                                "queryType": 12,
-                                "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$\",\"columns\":[{\"columnid\":\"Name\",\"path\":\"$.name\"},{\"columnid\":\"State\",\"path\":\"$.properties.provisioningState\"},{\"columnid\":\"Timestamp\",\"path\":\"$.properties.timestamp\"},{\"columnid\":\"Error\",\"path\":\"$.properties.error\"}]},\"type\":\"jsonpath\"}],\"path\":\"{ResourceGroupId}/providers/Microsoft.Resources/deployments/{DeploymentName}\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2025-04-01\"}],\"method\":\"GET\"}",
-                                "showRefreshButton": true,
-                                "version": "KqlItem/1.0",
-                                "showExportToExcel": true,
-                                "title": "🚦 1. Check deployment status",
-                                "size": 0
+                                "title": "📜 3. Recent table activity - first returned page",
+                                "size": 0,
+                                "noDataMessage": "No activity was returned for this table and window. Events can take 3-20 minutes to appear; this is not proof that no update happened. Check current settings above."
                               },
                               "styleSettings": {
                                 "margin": "12px 0 20px",
@@ -6063,38 +5061,11 @@
                               }
                             },
                             {
-                              "name": "DeploymentResults",
+                              "name": "VerifyActivityCoverage",
                               "type": 3,
                               "content": {
                                 "gridSettings": {
                                   "formatters": [
-                                    {
-                                      "formatOptions": {
-                                        "thresholdsOptions": "icons",
-                                        "thresholdsGrid": [
-                                          {
-                                            "thresholdValue": "true",
-                                            "representation": "success",
-                                            "operator": "==",
-                                            "text": "{0}{1}"
-                                          },
-                                          {
-                                            "thresholdValue": "false",
-                                            "representation": "3",
-                                            "operator": "==",
-                                            "text": "{0}{1}"
-                                          },
-                                          {
-                                            "thresholdValue": null,
-                                            "representation": "unknown",
-                                            "operator": "Default",
-                                            "text": "{0}{1}"
-                                          }
-                                        ]
-                                      },
-                                      "formatter": 18,
-                                      "columnMatch": "SchemaPreserved"
-                                    },
                                     {
                                       "formatter": 5,
                                       "columnMatch": "CustomColumns"
@@ -6128,7 +5099,7 @@
                                       "columnMatch": "TableName"
                                     }
                                   ],
-                                  "filter": true,
+                                  "filter": false,
                                   "labelSettings": [
                                     {
                                       "columnId": "TableName",
@@ -6378,313 +5349,13 @@
                                   "rowLimit": 10000
                                 },
                                 "queryType": 12,
-                                "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$.properties.outputs.results.value\",\"columns\":[{\"columnid\":\"TableName\",\"path\":\"$.table\"},{\"columnid\":\"Decision\",\"path\":\"$.decision\"},{\"columnid\":\"SchemaPreserved\",\"path\":\"$.schemaPreserved\"},{\"columnid\":\"SchemaSubmitted\",\"path\":\"$.schemaSubmitted\"},{\"columnid\":\"BeforeSubtype\",\"path\":\"$.subtypeBefore\"},{\"columnid\":\"AfterSubtype\",\"path\":\"$.settingsAfter.schema.tableSubType\"},{\"columnid\":\"BeforeAnalyticsDays\",\"path\":\"$.analyticsDaysBefore\"},{\"columnid\":\"BeforeTotalDays\",\"path\":\"$.totalDaysBefore\"},{\"columnid\":\"TargetDays\",\"path\":\"$.targetDays\"},{\"columnid\":\"AfterAnalyticsDays\",\"path\":\"$.settingsAfter.retentionInDays\"},{\"columnid\":\"AfterTotalDays\",\"path\":\"$.settingsAfter.totalRetentionInDays\"},{\"columnid\":\"AfterPlan\",\"path\":\"$.settingsAfter.plan\"},{\"columnid\":\"AnalyticsInherited\",\"path\":\"$.settingsAfter.retentionInDaysAsDefault\"},{\"columnid\":\"ResourceId\",\"path\":\"$.resourceId\"}]},\"type\":\"jsonpath\"}],\"path\":\"{ResourceGroupId}/providers/Microsoft.Resources/deployments/{DeploymentName}\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2025-04-01\"}],\"method\":\"GET\"}",
+                                "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$\",\"columns\":[{\"substringReplace\":\"More activity exists: first page only. Shorten the window or inspect the Azure Activity Log for the full history.\",\"substringRegexMatch\":\".+\",\"columnid\":\"NextPage\",\"path\":\"$.nextLink\"}]},\"type\":\"jsonpath\"}],\"path\":\"{VerifySubscriptionScope}/providers/Microsoft.Insights/eventtypes/management/values\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2015-04-01\"},{\"key\":\"$filter\",\"value\":\"{VerifyActivityFilter}\"},{\"key\":\"$select\",\"value\":\"eventTimestamp,operationName,status,subStatus,correlationId,eventDataId,resourceId\"}],\"method\":\"GET\"}",
                                 "showRefreshButton": true,
                                 "version": "KqlItem/1.0",
                                 "showExportToExcel": true,
-                                "title": "📋 2. Compare before and after",
-                                "size": 0
-                              },
-                              "styleSettings": {
-                                "margin": "12px 0 20px",
-                                "padding": "0"
-                              }
-                            },
-                            {
-                              "name": "DeploymentOperations",
-                              "type": 3,
-                              "content": {
-                                "gridSettings": {
-                                  "formatters": [
-                                    {
-                                      "formatter": 5,
-                                      "columnMatch": "CustomColumns"
-                                    },
-                                    {
-                                      "formatOptions": {
-                                        "thresholdsOptions": "icons",
-                                        "thresholdsGrid": [
-                                          {
-                                            "thresholdValue": "INCREASE",
-                                            "representation": "success",
-                                            "operator": "==",
-                                            "text": "{0}{1}"
-                                          },
-                                          {
-                                            "thresholdValue": null,
-                                            "representation": "unknown",
-                                            "operator": "Default",
-                                            "text": "{0}{1}"
-                                          }
-                                        ]
-                                      },
-                                      "formatter": 18,
-                                      "columnMatch": "Decision"
-                                    },
-                                    {
-                                      "formatOptions": {
-                                        "customColumnWidthSetting": "28ch"
-                                      },
-                                      "formatter": 0,
-                                      "columnMatch": "TableName"
-                                    }
-                                  ],
-                                  "filter": true,
-                                  "labelSettings": [
-                                    {
-                                      "columnId": "TableName",
-                                      "label": "Table name"
-                                    },
-                                    {
-                                      "columnId": "APIPlan",
-                                      "label": "Plan"
-                                    },
-                                    {
-                                      "columnId": "TableSubType",
-                                      "label": "Subtype"
-                                    },
-                                    {
-                                      "columnId": "TableType",
-                                      "label": "Table type"
-                                    },
-                                    {
-                                      "columnId": "AnalyticsDays",
-                                      "label": "Analytics (days)"
-                                    },
-                                    {
-                                      "columnId": "TotalDays",
-                                      "label": "Current total (days)"
-                                    },
-                                    {
-                                      "columnId": "CurrentTotalDays",
-                                      "label": "Current total (days)"
-                                    },
-                                    {
-                                      "columnId": "ProposedTotalDays",
-                                      "label": "Proposed total (days)"
-                                    },
-                                    {
-                                      "columnId": "TargetDays",
-                                      "label": "Target (days)"
-                                    },
-                                    {
-                                      "columnId": "AdditionalDays",
-                                      "label": "Added days"
-                                    },
-                                    {
-                                      "columnId": "AnalyticsInherited",
-                                      "label": "Inherits analytics"
-                                    },
-                                    {
-                                      "columnId": "TotalInherited",
-                                      "label": "Inherits total"
-                                    },
-                                    {
-                                      "columnId": "ResourceId",
-                                      "label": "Resource"
-                                    },
-                                    {
-                                      "columnId": "SelectedCount",
-                                      "label": "Selected"
-                                    },
-                                    {
-                                      "columnId": "IncreaseCount",
-                                      "label": "To increase"
-                                    },
-                                    {
-                                      "columnId": "SelectedTables",
-                                      "label": "Selected tables"
-                                    },
-                                    {
-                                      "columnId": "EstimatedTables",
-                                      "label": "Estimated"
-                                    },
-                                    {
-                                      "columnId": "UnestimatedTables",
-                                      "label": "Without estimate"
-                                    },
-                                    {
-                                      "columnId": "TablesToIncrease",
-                                      "label": "Tables to update"
-                                    },
-                                    {
-                                      "columnId": "DeploymentName",
-                                      "label": "Deployment name"
-                                    },
-                                    {
-                                      "columnId": "State",
-                                      "label": "State"
-                                    },
-                                    {
-                                      "columnId": "Decision",
-                                      "label": "Decision"
-                                    },
-                                    {
-                                      "columnId": "EstimateStatus",
-                                      "label": "Estimate status"
-                                    },
-                                    {
-                                      "columnId": "MeasuredGB",
-                                      "label": "Observed volume (GB)"
-                                    },
-                                    {
-                                      "columnId": "AverageGBPerDay",
-                                      "label": "Average GB / day"
-                                    },
-                                    {
-                                      "columnId": "ObservedVolumeGB",
-                                      "label": "Observed volume (GB)"
-                                    },
-                                    {
-                                      "columnId": "CurrentMonthlyCost",
-                                      "label": "Current / month"
-                                    },
-                                    {
-                                      "columnId": "ProposedMonthlyCost",
-                                      "label": "Proposed / month"
-                                    },
-                                    {
-                                      "columnId": "AdditionalMonthlyCost",
-                                      "label": "Extra / month"
-                                    },
-                                    {
-                                      "columnId": "CurrentLakeBilledGB",
-                                      "label": "Current billed GB"
-                                    },
-                                    {
-                                      "columnId": "ProposedLakeBilledGB",
-                                      "label": "Proposed billed GB"
-                                    },
-                                    {
-                                      "columnId": "CurrentPaidLakeDays",
-                                      "label": "Current paid days"
-                                    },
-                                    {
-                                      "columnId": "ProposedPaidLakeDays",
-                                      "label": "Proposed paid days"
-                                    },
-                                    {
-                                      "columnId": "ObservationDays",
-                                      "label": "Window (days)"
-                                    },
-                                    {
-                                      "columnId": "DaysWithUsage",
-                                      "label": "Days with activity"
-                                    },
-                                    {
-                                      "columnId": "ObservationNote",
-                                      "label": "Volume coverage"
-                                    },
-                                    {
-                                      "columnId": "ScenarioNote",
-                                      "label": "Scenario"
-                                    },
-                                    {
-                                      "columnId": "BillingBasis",
-                                      "label": "Billing basis"
-                                    },
-                                    {
-                                      "columnId": "LastUsage",
-                                      "label": "Last observed activity"
-                                    },
-                                    {
-                                      "columnId": "BeforeSubtype",
-                                      "label": "Subtype before"
-                                    },
-                                    {
-                                      "columnId": "AfterSubtype",
-                                      "label": "Subtype after"
-                                    },
-                                    {
-                                      "columnId": "BeforeAnalyticsDays",
-                                      "label": "Analytics before"
-                                    },
-                                    {
-                                      "columnId": "AfterAnalyticsDays",
-                                      "label": "Analytics after"
-                                    },
-                                    {
-                                      "columnId": "BeforeTotalDays",
-                                      "label": "Total before"
-                                    },
-                                    {
-                                      "columnId": "AfterTotalDays",
-                                      "label": "Total after"
-                                    },
-                                    {
-                                      "columnId": "AfterPlan",
-                                      "label": "Plan after"
-                                    },
-                                    {
-                                      "columnId": "StatusCode",
-                                      "label": "HTTP status"
-                                    },
-                                    {
-                                      "columnId": "EventTime",
-                                      "label": "Event time"
-                                    },
-                                    {
-                                      "columnId": "Operation",
-                                      "label": "Operation"
-                                    },
-                                    {
-                                      "columnId": "ActivityStatus",
-                                      "label": "Activity status"
-                                    },
-                                    {
-                                      "columnId": "CorrelationId",
-                                      "label": "Correlation ID"
-                                    },
-                                    {
-                                      "columnId": "EventId",
-                                      "label": "Event ID"
-                                    },
-                                    {
-                                      "columnId": "NextPage",
-                                      "label": "Additional results"
-                                    },
-                                    {
-                                      "columnId": "SchemaPreserved",
-                                      "label": "Schema unchanged"
-                                    },
-                                    {
-                                      "columnId": "SchemaSubmitted",
-                                      "label": "Schema submitted"
-                                    },
-                                    {
-                                      "columnId": "BatchNumber",
-                                      "label": "Batch"
-                                    },
-                                    {
-                                      "columnId": "BatchCount",
-                                      "label": "Total batches"
-                                    },
-                                    {
-                                      "columnId": "TableCount",
-                                      "label": "Tables in this change"
-                                    },
-                                    {
-                                      "columnId": "ReadHttpStatus",
-                                      "label": "GET status"
-                                    },
-                                    {
-                                      "columnId": "ErrorCode",
-                                      "label": "Read error"
-                                    },
-                                    {
-                                      "columnId": "ErrorMessage",
-                                      "label": "Error details"
-                                    }
-                                  ],
-                                  "rowLimit": 10000
-                                },
-                                "queryType": 12,
-                                "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$.value\",\"columns\":[{\"columnid\":\"Resource\",\"path\":\"$.properties.targetResource.resourceName\"},{\"columnid\":\"State\",\"path\":\"$.properties.provisioningState\"},{\"columnid\":\"StatusCode\",\"path\":\"$.properties.statusCode\"},{\"columnid\":\"Details\",\"path\":\"$.properties.statusMessage\"}]},\"type\":\"jsonpath\"}],\"path\":\"{ResourceGroupId}/providers/Microsoft.Resources/deployments/{DeploymentName}/operations\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2025-04-01\"}],\"method\":\"GET\"}",
-                                "showRefreshButton": true,
-                                "version": "KqlItem/1.0",
-                                "showExportToExcel": true,
-                                "title": "🔎 3. Inspect individual operation errors",
-                                "size": 0
+                                "title": "Activity history coverage",
+                                "size": 4,
+                                "noDataMessage": "No additional activity page was reported."
                               },
                               "styleSettings": {
                                 "margin": "12px 0 20px",
@@ -6704,7 +5375,8 @@
                 }
               ],
               "groupType": "editable",
-              "version": "NotebookGroup/1.0"
+              "version": "NotebookGroup/1.0",
+              "exportParameters": true
             }
           }
         ],

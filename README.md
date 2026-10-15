@@ -2,7 +2,7 @@
 
 An Azure Monitor / Microsoft Sentinel workbook for reviewing table retention, increasing total retention for one or many tables, and forecasting Data Lake storage costs.
 
-**Current version: 3.1**
+**Current version: 3.2**
 
 Download [SentinelDataLakeRetention.workbook.json](SentinelDataLakeRetention.workbook.json) and import it into a workbook. No scripts, deployments, Azure Functions, Logic Apps, Automation accounts, or helper identities are required.
 
@@ -12,7 +12,7 @@ Download [SentinelDataLakeRetention.workbook.json](SentinelDataLakeRetention.wor
 |---|---|
 | **Tables** | Search and select tables, review proposed changes, and apply retention-only updates. |
 | **Costs** | Forecast current, proposed, and additional monthly Lake storage costs from observed table volume. |
-| **Verify** | Read current table settings and optionally inspect recent Azure Activity Log events. |
+| **Verify** | Select a table to read its current settings and automatically load recent Azure Activity Log events. |
 
 - **Automatic single / multiple selection:** one eligible table uses direct PATCH; multiple tables use batched PATCH.
 - **Retention only:** requests contain `totalRetentionInDays`, not schema, subtype, plan, or analytics-retention settings.
@@ -29,7 +29,7 @@ Download [SentinelDataLakeRetention.workbook.json](SentinelDataLakeRetention.wor
 - Permission to read and update that workspace's table settings. Microsoft documents the relevant permissions in [Configure table settings](https://learn.microsoft.com/azure/sentinel/manage-table-tiers-retention).
 - Workspace query access for the selection and review queries.
 - Read access to the workspace's `Usage` table for cost forecasts.
-- **Optional:** Activity Log read access to show recent table operations.
+- Activity Log read access for recent table operations in Verify. If unavailable, the activity panel reports an error independently; current table settings can still be read with table-read permission.
 
 Defender portal access alone does not necessarily grant the Azure permissions required by the table API. Current updates do not require deployment-write permissions.
 
@@ -42,7 +42,7 @@ Defender portal access alone does not necessarily grant the Azure permissions re
 5. Select your subscription and workspace.
 6. Save a copy in your environment if desired.
 
-The header should show **Workbook revision: 3.1**. Reimport the JSON when upgrading an existing copy; close any old confirmation pane and reselect tables after upgrading.
+The header should show **Workbook revision: 3.2**. Reimport the JSON when upgrading an existing copy; close any old confirmation pane and reselect tables after upgrading.
 
 ## Update retention
 
@@ -109,9 +109,11 @@ Missing rows, mismatched values, read errors, or incomplete provisioning require
 
 ### Verify tab and Activity Log
 
-In **Verify > Table settings / PATCH**, select a table and refresh its current settings. No run ID is required.
+In **Verify**, select **exactly one table** and refresh its current settings. There is no mode selector, historical-deployment view, or run ID to enter. When changing tables, uncheck the previous one first: search does not clear selections. If several remain checked, an explicit message appears and details/activity are hidden rather than continuing to show the first table.
 
-Optionally enable **Recent table activity** for a 1-, 7-, 30-, or 90-day window:
+**Current table settings** uses a fresh table GET. Its grid has enough room to display the returned row and no redundant single-row search box. Compare total retention with the target above and also check provisioning state, analytics retention, inheritance, plan, and subtype. If the panel is empty or reports a read error, refresh or reselect the table; an empty result is not success.
+
+**Recent table activity** loads automatically after selection, with a default 7-day lookback. Choose 1, 7, 30, or 90 days:
 
 - Uses the native Activity Log API; no diagnostic setting or log export is required.
 - Shows operation status, timestamps, correlation IDs, and event IDs.
@@ -119,7 +121,7 @@ Optionally enable **Recent table activity** for a 1-, 7-, 30-, or 90-day window:
 - `tables/write` includes PATCH, PUT, deployments, and other administrators' changes. It does not identify your last workbook click automatically.
 - Only the first returned page is shown; a coverage warning indicates more results.
 
-Historical deployment lookup is retained for users of older workbook versions. **Current direct and batched PATCH updates create no deployment records.**
+The settings and activity panels are independent: an Activity Log permissions error does not prove the PATCH failed. **Current direct and batched PATCH updates create no deployment records**, so historical deployment lookup has been removed.
 
 There is **no automatic retry or rollback**. If a batch partially succeeds, investigate and retry only the tables that still need a change.
 
