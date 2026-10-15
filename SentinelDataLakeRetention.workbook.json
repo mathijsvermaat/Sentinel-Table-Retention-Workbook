@@ -4,7 +4,7 @@
       "name": "Introduction",
       "type": 1,
       "content": {
-        "json": "# 🛡️ Sentinel Data Lake Retention\r\n## Table retention & storage cost planning\r\n*Workbook revision: 3.2 · Automatic single / batched PATCH · No helper services*\r\n\r\n---\r\n\r\n### 📋 Purpose\r\n**Review table retention, plan storage costs and apply explicit updates** in one Data Lake-integrated workspace. Select one or many tables in the same view: the workbook automatically uses direct PATCH or groups retention-only PATCH requests into batches of up to 20. Only total retention is sent; no schema, subtype, plan or analytics-retention fields are submitted.\r\n\r\n> **⚠️ Before changing retention:** refresh your selection, avoid concurrent changes and verify the result in Defender. Longer retention may increase storage cost. Nothing is applied until you confirm."
+        "json": "# 🛡️ Sentinel Data Lake Retention\r\n## Table retention & storage cost planning\r\n*Workbook revision: 3.3 · Automatic single / batched PATCH · No helper services*\r\n\r\n---\r\n\r\n### 📋 Purpose\r\n**Review table retention, plan storage costs and apply explicit updates** in one Data Lake-integrated workspace. Select one or many tables in the same view: the workbook automatically uses direct PATCH or groups retention-only PATCH requests into batches of up to 20. Only total retention is sent; no schema, subtype, plan or analytics-retention fields are submitted.\r\n\r\n> **⚠️ Before changing retention:** refresh your selection, avoid concurrent changes and verify the result in Defender. Longer retention may increase storage cost. Nothing is applied until you confirm."
       },
       "styleSettings": {
         "margin": "8px 0",
@@ -3945,7 +3945,7 @@
                   "name": "VerificationInstructions",
                   "type": 1,
                   "content": {
-                    "json": "## 🔍 Verify the table you changed\r\nSelect **exactly one table** below to load its **current settings** and **recent Azure Activity Log** automatically. When changing tables, uncheck the previous one first—search does not clear selections. No verification-mode selector, activity toggle or run ID is needed.\r\n\r\n> **📌 Current state and audit evidence are different.** A matching retention value confirms the setting now, not which request caused it. Refresh after completion and confirm the same table in Defender. Nothing in this tab changes retention."
+                    "json": "## 🔍 Verify one or many tables\r\nSelect the tables you changed. **Current settings** and **recent activity** load for the entire selection, up to 800 tables, with no mode selector or run ID.\r\n\r\n> **📌 Search does not clear selections.** Check the selected table names and clear/reselect when changing workspaces. Current-state agreement and a logged write are different evidence; neither by itself proves your last click caused the result."
                   },
                   "styleSettings": {
                     "margin": "8px 0",
@@ -4245,17 +4245,16 @@
                     "showRefreshButton": true,
                     "exportedParameters": [
                       {
-                        "fieldName": "TableName",
                         "parameterName": "VerifyTableSelection",
                         "parameterType": 1,
-                        "quote": "\"",
+                        "quote": "",
                         "delimiter": ","
                       }
                     ],
                     "version": "KqlItem/1.0",
                     "showExportToExcel": true,
                     "exportMultipleValues": true,
-                    "title": "🔎 1. Select the table you changed",
+                    "title": "🔎 1. Select one or more tables to verify",
                     "size": 0
                   },
                   "styleSettings": {
@@ -4273,7 +4272,35 @@
                       {
                         "id": "ab384d86-70f6-45c1-b28c-d82e351735e7",
                         "version": "KqlParameterItem/1.0",
-                        "name": "VerifyTableName",
+                        "name": "VerifySelectionState",
+                        "type": 1,
+                        "value": "NotReady",
+                        "isHiddenWhenLocked": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "crossComponentResources": [
+                          "{Workspace}"
+                        ],
+                        "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nlet Selection=print Rows=dynamic([{VerifyTableSelection}])\r\n| mv-expand Row=Rows\r\n| project Name=tostring(Row.TableName),ResourceId=tostring(Row.ResourceId)\r\n| distinct *\r\n| extend Valid=WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n    and Name matches regex @\"^[A-Za-z0-9_-]{4,63}$\"\r\n    and ResourceId =~ strcat(WorkspaceId,'/tables/',Name);\r\nlet Summary=Selection\r\n| order by Name asc\r\n| summarize Count=count(),Invalid=countif(not(Valid)),\r\n    Names=make_list(Name,800),\r\n    TablePredicates=make_list(strcat(\"@.name == '\",Name,\"'\"),800),\r\n    ActivityPredicates=make_list(strcat(\"@.resourceId && @.resourceId.toLowerCase() == '\",\r\n        replace_string(tolower(ResourceId), \"'\", \"\\\\'\"),\"'\"),800)\r\n| extend Ready=Count > 0 and Count <= 800 and Invalid == 0;\nSummary | project State=iff(Ready,'Ready','NotReady')"
+                      },
+                      {
+                        "id": "84628931-4a01-43e8-9ff7-d8dba08f3a5b",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "VerifySelectionStatus",
+                        "type": 1,
+                        "value": "Select one or more tables to load current settings and activity.",
+                        "isHiddenWhenLocked": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "crossComponentResources": [
+                          "{Workspace}"
+                        ],
+                        "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nlet Selection=print Rows=dynamic([{VerifyTableSelection}])\r\n| mv-expand Row=Rows\r\n| project Name=tostring(Row.TableName),ResourceId=tostring(Row.ResourceId)\r\n| distinct *\r\n| extend Valid=WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n    and Name matches regex @\"^[A-Za-z0-9_-]{4,63}$\"\r\n    and ResourceId =~ strcat(WorkspaceId,'/tables/',Name);\r\nlet Summary=Selection\r\n| order by Name asc\r\n| summarize Count=count(),Invalid=countif(not(Valid)),\r\n    Names=make_list(Name,800),\r\n    TablePredicates=make_list(strcat(\"@.name == '\",Name,\"'\"),800),\r\n    ActivityPredicates=make_list(strcat(\"@.resourceId && @.resourceId.toLowerCase() == '\",\r\n        replace_string(tolower(ResourceId), \"'\", \"\\\\'\"),\"'\"),800)\r\n| extend Ready=Count > 0 and Count <= 800 and Invalid == 0;\r\nSummary\r\n| project Status=case(Count == 0,'Select one or more tables to load current settings and activity.',\r\n    Count > 800,'Select no more than 800 tables at once.',\r\n    Invalid > 0,'Stale or invalid selection: clear the selection and choose tables from the current workspace.',\r\n    strcat('Showing current settings and activity for ',Count,' selected table(s). Search does not clear previous selections.'))"
+                      },
+                      {
+                        "id": "1ba66b86-e1c1-47cd-b98e-378c26407272",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "VerifyCurrentFilter",
                         "type": 1,
                         "value": "",
                         "isHiddenWhenLocked": true,
@@ -4282,21 +4309,35 @@
                         "crossComponentResources": [
                           "{Workspace}"
                         ],
-                        "query": "let Names=dynamic([{VerifyTableSelection}]);\r\nlet Count=array_length(Names);\r\nlet Name=iff(Count == 1,tostring(Names[0]),'');\r\nlet Valid=Count == 1 and Name matches regex @\"^[A-Za-z0-9_-]{4,63}$\";\nprint TableName=iff(Valid,Name,'')"
+                        "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nlet Selection=print Rows=dynamic([{VerifyTableSelection}])\r\n| mv-expand Row=Rows\r\n| project Name=tostring(Row.TableName),ResourceId=tostring(Row.ResourceId)\r\n| distinct *\r\n| extend Valid=WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n    and Name matches regex @\"^[A-Za-z0-9_-]{4,63}$\"\r\n    and ResourceId =~ strcat(WorkspaceId,'/tables/',Name);\r\nlet Summary=Selection\r\n| order by Name asc\r\n| summarize Count=count(),Invalid=countif(not(Valid)),\r\n    Names=make_list(Name,800),\r\n    TablePredicates=make_list(strcat(\"@.name == '\",Name,\"'\"),800),\r\n    ActivityPredicates=make_list(strcat(\"@.resourceId && @.resourceId.toLowerCase() == '\",\r\n        replace_string(tolower(ResourceId), \"'\", \"\\\\'\"),\"'\"),800)\r\n| extend Ready=Count > 0 and Count <= 800 and Invalid == 0;\r\nSummary\r\n| project Filter=iff(Ready,strcat('$.value[?(',strcat_array(TablePredicates,' || '),')]'),\"$.value[?(@.name == '__NO_SELECTION__')]\")"
                       },
                       {
-                        "id": "84628931-4a01-43e8-9ff7-d8dba08f3a5b",
+                        "id": "40974dc9-75b1-46fb-8dbb-06c459dc20c7",
                         "version": "KqlParameterItem/1.0",
-                        "name": "VerifySelectionStatus",
+                        "name": "VerifyActivityTablePath",
                         "type": 1,
-                        "value": "Select one table to load its settings and activity.",
+                        "value": "",
                         "isHiddenWhenLocked": true,
                         "queryType": 0,
                         "resourceType": "microsoft.operationalinsights/workspaces",
                         "crossComponentResources": [
                           "{Workspace}"
                         ],
-                        "query": "let Names=dynamic([{VerifyTableSelection}]);\r\nlet Count=array_length(Names);\r\nlet Name=iff(Count == 1,tostring(Names[0]),'');\r\nlet Valid=Count == 1 and Name matches regex @\"^[A-Za-z0-9_-]{4,63}$\";\r\nprint Status=case(Count == 0,'Select one table to load its settings and activity.',\r\n    Count > 1,'Multiple tables selected: uncheck the previous table. Search does not clear selections. Settings and activity are hidden until exactly one table is selected.',\r\n    not(Valid),'Invalid table selection: clear the selection and choose a table from the inventory.',\r\n    strcat('Showing current settings and activity for ',Name,'.'))"
+                        "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nlet Selection=print Rows=dynamic([{VerifyTableSelection}])\r\n| mv-expand Row=Rows\r\n| project Name=tostring(Row.TableName),ResourceId=tostring(Row.ResourceId)\r\n| distinct *\r\n| extend Valid=WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n    and Name matches regex @\"^[A-Za-z0-9_-]{4,63}$\"\r\n    and ResourceId =~ strcat(WorkspaceId,'/tables/',Name);\r\nlet Summary=Selection\r\n| order by Name asc\r\n| summarize Count=count(),Invalid=countif(not(Valid)),\r\n    Names=make_list(Name,800),\r\n    TablePredicates=make_list(strcat(\"@.name == '\",Name,\"'\"),800),\r\n    ActivityPredicates=make_list(strcat(\"@.resourceId && @.resourceId.toLowerCase() == '\",\r\n        replace_string(tolower(ResourceId), \"'\", \"\\\\'\"),\"'\"),800)\r\n| extend Ready=Count > 0 and Count <= 800 and Invalid == 0;\r\nSummary\r\n| project Filter=iff(Ready,strcat('$.value[?(',strcat_array(ActivityPredicates,' || '),')]'),\"$.value[?(@.resourceId == '__NO_SELECTION__')]\")"
+                      },
+                      {
+                        "id": "c8f6031b-a268-4b3c-9b93-ea053849c3a5",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "VerifyActivityPortalUrl",
+                        "type": 1,
+                        "value": "",
+                        "isHiddenWhenLocked": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "crossComponentResources": [
+                          "{Workspace}"
+                        ],
+                        "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nprint WorkspaceId\r\n| where WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n| project Url=strcat('https://portal.azure.com/#resource',WorkspaceId,'/eventlogs')"
                       }
                     ]
                   }
@@ -4315,8 +4356,9 @@
                 {
                   "name": "VerifyTableDetails",
                   "conditionalVisibility": {
-                    "parameterName": "VerifyTableName",
-                    "comparison": "isNotEqualTo"
+                    "parameterName": "VerifySelectionState",
+                    "comparison": "isEqualTo",
+                    "value": "Ready"
                   },
                   "type": 12,
                   "content": {
@@ -4325,7 +4367,7 @@
                         "name": "VerifyTableInstructions",
                         "type": 1,
                         "content": {
-                          "json": "### 🎯 Compare current settings with the intended target\r\n**Table:** `{VerifyTableName}` · **Target above:** **{TargetDays} days**\r\n\r\nRefresh **Current table settings** after the write completes. The total-retention icon compares the returned value with the target above. A different value is not automatically a failed request; it may be a newer or longer setting. **Provisioning state must also be Succeeded.**\r\n\r\nCompare analytics retention, plan, subtype and inheritance with your pre-change values. This tab does not invent a before-state snapshot or capture the last PATCH response. If cost-planning changed the target, restore the intended verification target before comparing."
+                          "json": "### 🎯 Compare every selected table with your target\r\n**Target above:** **{TargetDays} days**\r\n\r\nRefresh the grid after completion. Check that **every selected table is present**, total retention matches your intended value, provisioning is Succeeded, and analytics retention, plan, subtype and inheritance agree with your pre-change settings. A missing row is not success. A longer current value may be a newer setting; do not reduce it just to make the icon match.\r\n\r\nThis is a fresh workspace-table read, not a stored before/after transaction log. If cost-planning changed the target, restore the intended verification target before comparing."
                         },
                         "styleSettings": {
                           "margin": "8px 0",
@@ -4642,13 +4684,13 @@
                             "rowLimit": 10000
                           },
                           "queryType": 12,
-                          "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$\",\"columns\":[{\"columnid\":\"TableName\",\"path\":\"$.name\"},{\"columnid\":\"APIPlan\",\"path\":\"$.properties.plan\"},{\"columnid\":\"AnalyticsDays\",\"path\":\"$.properties.retentionInDays\"},{\"columnid\":\"TotalDays\",\"path\":\"$.properties.totalRetentionInDays\"},{\"columnid\":\"AnalyticsInherited\",\"path\":\"$.properties.retentionInDaysAsDefault\"},{\"columnid\":\"TotalInherited\",\"path\":\"$.properties.totalRetentionInDaysAsDefault\"},{\"columnid\":\"TableType\",\"path\":\"$.properties.schema.tableType\"},{\"columnid\":\"TableSubType\",\"path\":\"$.properties.schema.tableSubType\"},{\"columnid\":\"CustomColumns\",\"path\":\"$.properties.schema.columns\"},{\"columnid\":\"State\",\"path\":\"$.properties.provisioningState\"},{\"columnid\":\"ResourceId\",\"path\":\"$.id\"}]},\"type\":\"jsonpath\"}],\"path\":\"{Workspace}/tables/{VerifyTableName}\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2026-03-01\"}],\"method\":\"GET\"}",
+                          "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"{VerifyCurrentFilter}\",\"columns\":[{\"columnid\":\"TableName\",\"path\":\"$.name\"},{\"columnid\":\"APIPlan\",\"path\":\"$.properties.plan\"},{\"columnid\":\"AnalyticsDays\",\"path\":\"$.properties.retentionInDays\"},{\"columnid\":\"TotalDays\",\"path\":\"$.properties.totalRetentionInDays\"},{\"columnid\":\"AnalyticsInherited\",\"path\":\"$.properties.retentionInDaysAsDefault\"},{\"columnid\":\"TotalInherited\",\"path\":\"$.properties.totalRetentionInDaysAsDefault\"},{\"columnid\":\"TableType\",\"path\":\"$.properties.schema.tableType\"},{\"columnid\":\"TableSubType\",\"path\":\"$.properties.schema.tableSubType\"},{\"columnid\":\"CustomColumns\",\"path\":\"$.properties.schema.columns\"},{\"columnid\":\"State\",\"path\":\"$.properties.provisioningState\"},{\"columnid\":\"ResourceId\",\"path\":\"$.id\"}]},\"type\":\"jsonpath\"}],\"path\":\"{Workspace}/tables\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2026-03-01\"}],\"method\":\"GET\"}",
                           "showRefreshButton": true,
                           "version": "KqlItem/1.0",
                           "showExportToExcel": true,
-                          "title": "🔄 2. Current table settings - refresh after your update",
+                          "title": "🔄 2. Current settings for the selected tables",
                           "size": 1,
-                          "noDataMessage": "No current table settings were returned. Refresh this panel or reselect the table. An empty response is not a successful verification."
+                          "noDataMessage": "No current settings were returned for the selected tables. Refresh/reselect and investigate missing tables; an empty or partial result is not a successful verification."
                         },
                         "styleSettings": {
                           "margin": "12px 0 20px",
@@ -4664,7 +4706,7 @@
                               "name": "VerifyActivityInstructions",
                               "type": 1,
                               "content": {
-                                "json": "### 📜 Supporting evidence from Azure Activity Log\r\nRecent activity loads automatically for the selected table. The **Activity lookback** below defaults to 7 days. This uses the native ARM Activity Log API; no diagnostic setting, export or extra resource is required.\r\n\r\n**Permissions:** Activity Log read access is needed for this panel. A permission error here does not mean the retention update failed, and the independent current-settings panel above remains usable.\r\n\r\nEvents can take **3-20 minutes** to appear and are retained for **90 days**. Displayed times follow the portal's regional formatting; the request filter uses UTC. `tables/write` includes PATCH, PUT and other administrators' updates. Started/Accepted is not completion, and Succeeded alone does not disclose the retention value. Correlation IDs are supporting evidence, not an automatic link to your last workbook click.\r\n\r\nOnly the **first returned page** is displayed. A coverage warning below means more results exist; blank continuation means no next-page link was returned. Refresh activity for new events, or refresh the workbook to reset the lookback start. No events is not proof of failure, and nothing here retries or rolls back a write."
+                                "json": "### 📜 What happened, who initiated it, and where to investigate\r\nThe grid shows Azure's operation description, status, initiator, available error/status details and correlation ID for **only the selected tables**. Use **View event JSON** for the complete event returned by the API. It may contain identity or network details; redact it before sharing outside your organization.\r\n\r\n**Azure does not always record the changed retention values.** A successful \"Create or update a log analytics table\" event confirms a table write, but does not distinguish retention from every other table property or supply an old/new value when the service omitted it. Missing details remain blank rather than being invented.\r\n\r\n**Open Azure Activity Log** opens the workspace's original Azure history, not a fabricated event-specific deep link. Adjust its time range and use the event time/correlation ID shown here to locate the original record. The default Azure portal time window can differ from this workbook's lookback.\r\n\r\nActivity is fetched once at workspace scope and filtered to the selected table IDs, case-insensitively. Events can take **3-20 minutes** to arrive; the built-in history is retained for **90 days**. Started/Accepted is not completion. Displayed times follow portal formatting; filters use UTC.\r\n\r\nA warning appears **only when another response page exists**; there is no empty \"Activity history coverage\" grid. Later pages can contain additional selected-table events. Shorten the window or use Azure Activity Log to inspect the full history.\r\n\r\nActivity Log read permission is required. A read/permissions error here is separate from the current-settings panel and does not prove the retention update failed. Refresh activity for new events, or refresh the workbook to reset the lookback start. No retries, writes or rollback are performed in Verify."
                               },
                               "styleSettings": {
                                 "margin": "8px 0",
@@ -4708,13 +4750,23 @@
                                       "{Workspace}"
                                     ],
                                     "type": 1,
-                                    "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nlet TableName=base64_decode_tostring('{VerifyTableName:base64}');\r\nlet DaysText=base64_decode_tostring('{VerifyActivityDays:base64}');\r\nprint WorkspaceId, TableName, Days=toint(DaysText)\r\n| where WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\"\r\n    and TableName matches regex @\"^[A-Za-z0-9_-]{4,63}$\" and DaysText in ('1','7','30','90')\r\n| extend Since=datetime_add('day', -Days, now())\r\n| project Filter=strcat(\"eventTimestamp ge '\", format_datetime(Since, \"yyyy-MM-dd\"), \"T\",\r\n    format_datetime(Since, \"HH:mm:ss\"), \"Z' and resourceUri eq '\", WorkspaceId, \"/tables/\", TableName, \"'\")",
+                                    "query": "let WorkspaceId=base64_decode_tostring('{Workspace:base64}');\r\nlet DaysText=base64_decode_tostring('{VerifyActivityDays:base64}');\r\nprint WorkspaceId,Days=toint(DaysText)\r\n| where WorkspaceId matches regex @\"(?i)^(/subscriptions/[0-9a-f-]{36}/resourceGroups/[^/]+)/providers/Microsoft[.]OperationalInsights/workspaces/([A-Za-z0-9-]+)$\" and DaysText in ('1','7','30','90')\r\n| extend Since=datetime_add('day',-Days,now())\r\n| project Filter=strcat(\"eventTimestamp ge '\",format_datetime(Since,'yyyy-MM-dd'),'T',\r\n    format_datetime(Since,'HH:mm:ss'),\"Z' and resourceUri eq '\",replace_string(WorkspaceId,\"'\",\"''\"),\"'\")",
                                     "version": "KqlParameterItem/1.0",
                                     "queryType": 0,
                                     "value": "",
                                     "name": "VerifyActivityFilter",
                                     "label": "Activity filter (internal)",
                                     "isHiddenWhenLocked": true
+                                  },
+                                  {
+                                    "id": "5322384f-331a-420b-8b56-58b2a3fc16d4",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "VerifyActivityNextPage",
+                                    "type": 1,
+                                    "value": "",
+                                    "isHiddenWhenLocked": true,
+                                    "queryType": 12,
+                                    "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$\",\"columns\":[{\"path\":\"$.nextLink\",\"columnid\":\"NextPage\"}]},\"type\":\"jsonpath\"}],\"path\":\"{VerifySubscriptionScope}/providers/Microsoft.Insights/eventtypes/management/values\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2015-04-01\"},{\"key\":\"$filter\",\"value\":\"{VerifyActivityFilter}\"},{\"key\":\"$select\",\"value\":\"eventTimestamp,operationName,status,subStatus,correlationId,eventDataId,resourceId,caller,description,properties,httpRequest,eventName,level\"}],\"method\":\"GET\"}"
                                   }
                                 ],
                                 "style": "above",
@@ -4722,6 +4774,38 @@
                               },
                               "styleSettings": {
                                 "margin": "8px 0 16px",
+                                "padding": "0"
+                              }
+                            },
+                            {
+                              "name": "VerifyOpenActivityLog",
+                              "type": 11,
+                              "content": {
+                                "links": [
+                                  {
+                                    "cellValue": "{VerifyActivityPortalUrl}",
+                                    "style": "link",
+                                    "linkTarget": "Url",
+                                    "linkLabel": "Open workspace Activity Log in Azure"
+                                  }
+                                ],
+                                "version": "LinkItem/1.0",
+                                "style": "list"
+                              }
+                            },
+                            {
+                              "name": "VerifyActivityContinuation",
+                              "type": 1,
+                              "conditionalVisibility": {
+                                "comparison": "isNotEqualTo",
+                                "parameterName": "VerifyActivityNextPage"
+                              },
+                              "content": {
+                                "json": "**More activity exists than this page shows.** Results below are filtered from the first returned workspace-history page, so some selected-table events may be on later pages. Shorten the lookback or [open the workspace Activity Log]({VerifyActivityPortalUrl}) for full history. This warning is a completeness indicator, not a second history source.",
+                                "style": "warning"
+                              },
+                              "styleSettings": {
+                                "margin": "8px 0",
                                 "padding": "0"
                               }
                             },
@@ -4789,6 +4873,42 @@
                                       },
                                       "formatter": 0,
                                       "columnMatch": "TableName"
+                                    },
+                                    {
+                                      "formatOptions": {
+                                        "linkTarget": "Url",
+                                        "linkLabel": "Open Azure Activity Log"
+                                      },
+                                      "formatter": 7,
+                                      "columnMatch": "ActivityLink"
+                                    },
+                                    {
+                                      "formatOptions": {
+                                        "linkTarget": "CellDetails",
+                                        "linkLabel": "View event JSON"
+                                      },
+                                      "formatter": 7,
+                                      "columnMatch": "EventJson"
+                                    },
+                                    {
+                                      "columnMatch": "^EventId$",
+                                      "formatter": 5
+                                    },
+                                    {
+                                      "columnMatch": "^Operation$",
+                                      "formatter": 5
+                                    },
+                                    {
+                                      "columnMatch": "^HttpMethod$",
+                                      "formatter": 5
+                                    },
+                                    {
+                                      "columnMatch": "^Level$",
+                                      "formatter": 5
+                                    },
+                                    {
+                                      "columnMatch": "^ResourceId$",
+                                      "formatter": 5
                                     }
                                   ],
                                   "filter": true,
@@ -5036,12 +5156,40 @@
                                     {
                                       "columnId": "ErrorMessage",
                                       "label": "Error details"
+                                    },
+                                    {
+                                      "columnId": "OperationDisplay",
+                                      "label": "Azure operation"
+                                    },
+                                    {
+                                      "columnId": "Caller",
+                                      "label": "Initiated by"
+                                    },
+                                    {
+                                      "columnId": "Description",
+                                      "label": "Description (if provided)"
+                                    },
+                                    {
+                                      "columnId": "StatusDetails",
+                                      "label": "Error / status details (if provided)"
+                                    },
+                                    {
+                                      "columnId": "ActivityLink",
+                                      "label": "Source activity log"
+                                    },
+                                    {
+                                      "columnId": "EventJson",
+                                      "label": "Recorded event details"
+                                    },
+                                    {
+                                      "columnId": "EventStage",
+                                      "label": "Event stage"
                                     }
                                   ],
                                   "rowLimit": 10000
                                 },
                                 "queryType": 12,
-                                "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$.value\",\"columns\":[{\"columnid\":\"EventTime\",\"path\":\"$.eventTimestamp\"},{\"columnid\":\"Operation\",\"path\":\"$.operationName.value\"},{\"columnid\":\"ActivityStatus\",\"path\":\"$.status.value\"},{\"columnid\":\"StatusCode\",\"path\":\"$.subStatus.value\"},{\"columnid\":\"CorrelationId\",\"path\":\"$.correlationId\"},{\"columnid\":\"EventId\",\"path\":\"$.eventDataId\"},{\"columnid\":\"ResourceId\",\"path\":\"$.resourceId\"}]},\"type\":\"jsonpath\"}],\"path\":\"{VerifySubscriptionScope}/providers/Microsoft.Insights/eventtypes/management/values\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2015-04-01\"},{\"key\":\"$filter\",\"value\":\"{VerifyActivityFilter}\"},{\"key\":\"$select\",\"value\":\"eventTimestamp,operationName,status,subStatus,correlationId,eventDataId,resourceId\"}],\"method\":\"GET\"}",
+                                "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"{VerifyActivityTablePath}\",\"columns\":[{\"columnid\":\"EventTime\",\"path\":\"$.eventTimestamp\"},{\"columnid\":\"TableName\",\"path\":\"$.resourceId\",\"substringRegexMatch\":\"^.*[/]tables[/]([^/]+)$\",\"substringReplace\":\"$1\"},{\"columnid\":\"OperationDisplay\",\"path\":\"$.operationName.localizedValue\"},{\"columnid\":\"ActivityStatus\",\"path\":\"$.status.value\"},{\"columnid\":\"Caller\",\"path\":\"$.caller\"},{\"columnid\":\"StatusCode\",\"path\":\"$.subStatus.value\"},{\"columnid\":\"Description\",\"path\":\"$.description\"},{\"columnid\":\"StatusDetails\",\"path\":\"$.properties.statusMessage\"},{\"columnid\":\"ActivityLink\",\"path\":\"$.eventDataId\",\"substringRegexMatch\":\"^.+$\",\"substringReplace\":\"{VerifyActivityPortalUrl}\"},{\"columnid\":\"EventJson\",\"path\":\"$\"},{\"columnid\":\"CorrelationId\",\"path\":\"$.correlationId\"},{\"columnid\":\"EventId\",\"path\":\"$.eventDataId\"},{\"columnid\":\"Operation\",\"path\":\"$.operationName.value\"},{\"columnid\":\"EventStage\",\"path\":\"$.eventName.localizedValue\"},{\"columnid\":\"HttpMethod\",\"path\":\"$.httpRequest.method\"},{\"columnid\":\"Level\",\"path\":\"$.level\"},{\"columnid\":\"ResourceId\",\"path\":\"$.resourceId\"}]},\"type\":\"jsonpath\"}],\"path\":\"{VerifySubscriptionScope}/providers/Microsoft.Insights/eventtypes/management/values\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2015-04-01\"},{\"key\":\"$filter\",\"value\":\"{VerifyActivityFilter}\"},{\"key\":\"$select\",\"value\":\"eventTimestamp,operationName,status,subStatus,correlationId,eventDataId,resourceId,caller,description,properties,httpRequest,eventName,level\"}],\"method\":\"GET\"}",
                                 "showRefreshButton": true,
                                 "version": "KqlItem/1.0",
                                 "showExportToExcel": true,
@@ -5051,311 +5199,9 @@
                                     "itemKey": "EventTime"
                                   }
                                 ],
-                                "title": "📜 3. Recent table activity - first returned page",
+                                "title": "📜 3. What Azure recorded for the selected tables",
                                 "size": 0,
-                                "noDataMessage": "No activity was returned for this table and window. Events can take 3-20 minutes to appear; this is not proof that no update happened. Check current settings above."
-                              },
-                              "styleSettings": {
-                                "margin": "12px 0 20px",
-                                "padding": "0"
-                              }
-                            },
-                            {
-                              "name": "VerifyActivityCoverage",
-                              "type": 3,
-                              "content": {
-                                "gridSettings": {
-                                  "formatters": [
-                                    {
-                                      "formatter": 5,
-                                      "columnMatch": "CustomColumns"
-                                    },
-                                    {
-                                      "formatOptions": {
-                                        "thresholdsOptions": "icons",
-                                        "thresholdsGrid": [
-                                          {
-                                            "thresholdValue": "INCREASE",
-                                            "representation": "success",
-                                            "operator": "==",
-                                            "text": "{0}{1}"
-                                          },
-                                          {
-                                            "thresholdValue": null,
-                                            "representation": "unknown",
-                                            "operator": "Default",
-                                            "text": "{0}{1}"
-                                          }
-                                        ]
-                                      },
-                                      "formatter": 18,
-                                      "columnMatch": "Decision"
-                                    },
-                                    {
-                                      "formatOptions": {
-                                        "customColumnWidthSetting": "28ch"
-                                      },
-                                      "formatter": 0,
-                                      "columnMatch": "TableName"
-                                    }
-                                  ],
-                                  "filter": false,
-                                  "labelSettings": [
-                                    {
-                                      "columnId": "TableName",
-                                      "label": "Table name"
-                                    },
-                                    {
-                                      "columnId": "APIPlan",
-                                      "label": "Plan"
-                                    },
-                                    {
-                                      "columnId": "TableSubType",
-                                      "label": "Subtype"
-                                    },
-                                    {
-                                      "columnId": "TableType",
-                                      "label": "Table type"
-                                    },
-                                    {
-                                      "columnId": "AnalyticsDays",
-                                      "label": "Analytics (days)"
-                                    },
-                                    {
-                                      "columnId": "TotalDays",
-                                      "label": "Current total (days)"
-                                    },
-                                    {
-                                      "columnId": "CurrentTotalDays",
-                                      "label": "Current total (days)"
-                                    },
-                                    {
-                                      "columnId": "ProposedTotalDays",
-                                      "label": "Proposed total (days)"
-                                    },
-                                    {
-                                      "columnId": "TargetDays",
-                                      "label": "Target (days)"
-                                    },
-                                    {
-                                      "columnId": "AdditionalDays",
-                                      "label": "Added days"
-                                    },
-                                    {
-                                      "columnId": "AnalyticsInherited",
-                                      "label": "Inherits analytics"
-                                    },
-                                    {
-                                      "columnId": "TotalInherited",
-                                      "label": "Inherits total"
-                                    },
-                                    {
-                                      "columnId": "ResourceId",
-                                      "label": "Resource"
-                                    },
-                                    {
-                                      "columnId": "SelectedCount",
-                                      "label": "Selected"
-                                    },
-                                    {
-                                      "columnId": "IncreaseCount",
-                                      "label": "To increase"
-                                    },
-                                    {
-                                      "columnId": "SelectedTables",
-                                      "label": "Selected tables"
-                                    },
-                                    {
-                                      "columnId": "EstimatedTables",
-                                      "label": "Estimated"
-                                    },
-                                    {
-                                      "columnId": "UnestimatedTables",
-                                      "label": "Without estimate"
-                                    },
-                                    {
-                                      "columnId": "TablesToIncrease",
-                                      "label": "Tables to update"
-                                    },
-                                    {
-                                      "columnId": "DeploymentName",
-                                      "label": "Deployment name"
-                                    },
-                                    {
-                                      "columnId": "State",
-                                      "label": "State"
-                                    },
-                                    {
-                                      "columnId": "Decision",
-                                      "label": "Decision"
-                                    },
-                                    {
-                                      "columnId": "EstimateStatus",
-                                      "label": "Estimate status"
-                                    },
-                                    {
-                                      "columnId": "MeasuredGB",
-                                      "label": "Observed volume (GB)"
-                                    },
-                                    {
-                                      "columnId": "AverageGBPerDay",
-                                      "label": "Average GB / day"
-                                    },
-                                    {
-                                      "columnId": "ObservedVolumeGB",
-                                      "label": "Observed volume (GB)"
-                                    },
-                                    {
-                                      "columnId": "CurrentMonthlyCost",
-                                      "label": "Current / month"
-                                    },
-                                    {
-                                      "columnId": "ProposedMonthlyCost",
-                                      "label": "Proposed / month"
-                                    },
-                                    {
-                                      "columnId": "AdditionalMonthlyCost",
-                                      "label": "Extra / month"
-                                    },
-                                    {
-                                      "columnId": "CurrentLakeBilledGB",
-                                      "label": "Current billed GB"
-                                    },
-                                    {
-                                      "columnId": "ProposedLakeBilledGB",
-                                      "label": "Proposed billed GB"
-                                    },
-                                    {
-                                      "columnId": "CurrentPaidLakeDays",
-                                      "label": "Current paid days"
-                                    },
-                                    {
-                                      "columnId": "ProposedPaidLakeDays",
-                                      "label": "Proposed paid days"
-                                    },
-                                    {
-                                      "columnId": "ObservationDays",
-                                      "label": "Window (days)"
-                                    },
-                                    {
-                                      "columnId": "DaysWithUsage",
-                                      "label": "Days with activity"
-                                    },
-                                    {
-                                      "columnId": "ObservationNote",
-                                      "label": "Volume coverage"
-                                    },
-                                    {
-                                      "columnId": "ScenarioNote",
-                                      "label": "Scenario"
-                                    },
-                                    {
-                                      "columnId": "BillingBasis",
-                                      "label": "Billing basis"
-                                    },
-                                    {
-                                      "columnId": "LastUsage",
-                                      "label": "Last observed activity"
-                                    },
-                                    {
-                                      "columnId": "BeforeSubtype",
-                                      "label": "Subtype before"
-                                    },
-                                    {
-                                      "columnId": "AfterSubtype",
-                                      "label": "Subtype after"
-                                    },
-                                    {
-                                      "columnId": "BeforeAnalyticsDays",
-                                      "label": "Analytics before"
-                                    },
-                                    {
-                                      "columnId": "AfterAnalyticsDays",
-                                      "label": "Analytics after"
-                                    },
-                                    {
-                                      "columnId": "BeforeTotalDays",
-                                      "label": "Total before"
-                                    },
-                                    {
-                                      "columnId": "AfterTotalDays",
-                                      "label": "Total after"
-                                    },
-                                    {
-                                      "columnId": "AfterPlan",
-                                      "label": "Plan after"
-                                    },
-                                    {
-                                      "columnId": "StatusCode",
-                                      "label": "HTTP status"
-                                    },
-                                    {
-                                      "columnId": "EventTime",
-                                      "label": "Event time"
-                                    },
-                                    {
-                                      "columnId": "Operation",
-                                      "label": "Operation"
-                                    },
-                                    {
-                                      "columnId": "ActivityStatus",
-                                      "label": "Activity status"
-                                    },
-                                    {
-                                      "columnId": "CorrelationId",
-                                      "label": "Correlation ID"
-                                    },
-                                    {
-                                      "columnId": "EventId",
-                                      "label": "Event ID"
-                                    },
-                                    {
-                                      "columnId": "NextPage",
-                                      "label": "Additional results"
-                                    },
-                                    {
-                                      "columnId": "SchemaPreserved",
-                                      "label": "Schema unchanged"
-                                    },
-                                    {
-                                      "columnId": "SchemaSubmitted",
-                                      "label": "Schema submitted"
-                                    },
-                                    {
-                                      "columnId": "BatchNumber",
-                                      "label": "Batch"
-                                    },
-                                    {
-                                      "columnId": "BatchCount",
-                                      "label": "Total batches"
-                                    },
-                                    {
-                                      "columnId": "TableCount",
-                                      "label": "Tables in this change"
-                                    },
-                                    {
-                                      "columnId": "ReadHttpStatus",
-                                      "label": "GET status"
-                                    },
-                                    {
-                                      "columnId": "ErrorCode",
-                                      "label": "Read error"
-                                    },
-                                    {
-                                      "columnId": "ErrorMessage",
-                                      "label": "Error details"
-                                    }
-                                  ],
-                                  "rowLimit": 10000
-                                },
-                                "queryType": 12,
-                                "query": "{\"data\":null,\"headers\":[],\"version\":\"ARMEndpoint/1.0\",\"batchDisabled\":true,\"transformers\":[{\"settings\":{\"tablePath\":\"$\",\"columns\":[{\"substringReplace\":\"More activity exists: first page only. Shorten the window or inspect the Azure Activity Log for the full history.\",\"substringRegexMatch\":\".+\",\"columnid\":\"NextPage\",\"path\":\"$.nextLink\"}]},\"type\":\"jsonpath\"}],\"path\":\"{VerifySubscriptionScope}/providers/Microsoft.Insights/eventtypes/management/values\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2015-04-01\"},{\"key\":\"$filter\",\"value\":\"{VerifyActivityFilter}\"},{\"key\":\"$select\",\"value\":\"eventTimestamp,operationName,status,subStatus,correlationId,eventDataId,resourceId\"}],\"method\":\"GET\"}",
-                                "showRefreshButton": true,
-                                "version": "KqlItem/1.0",
-                                "showExportToExcel": true,
-                                "title": "Activity history coverage",
-                                "size": 4,
-                                "noDataMessage": "No additional activity page was reported."
+                                "noDataMessage": "No matching table activity in the returned workspace-history page. Check the lookback and any continuation warning. Events can be delayed, and absence here does not prove no write occurred."
                               },
                               "styleSettings": {
                                 "margin": "12px 0 20px",

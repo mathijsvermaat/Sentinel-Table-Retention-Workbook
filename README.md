@@ -2,7 +2,7 @@
 
 An Azure Monitor / Microsoft Sentinel workbook for reviewing table retention, increasing total retention for one or many tables, and forecasting Data Lake storage costs.
 
-**Current version: 3.2**
+**Current version: 3.3**
 
 Download [SentinelDataLakeRetention.workbook.json](SentinelDataLakeRetention.workbook.json) and import it into a workbook. No scripts, deployments, Azure Functions, Logic Apps, Automation accounts, or helper identities are required.
 
@@ -12,7 +12,7 @@ Download [SentinelDataLakeRetention.workbook.json](SentinelDataLakeRetention.wor
 |---|---|
 | **Tables** | Search and select tables, review proposed changes, and apply retention-only updates. |
 | **Costs** | Forecast current, proposed, and additional monthly Lake storage costs from observed table volume. |
-| **Verify** | Select a table to read its current settings and automatically load recent Azure Activity Log events. |
+| **Verify** | Select one or more tables to read current settings and inspect their recent Azure Activity Log events, initiators, details, and source links. |
 
 - **Automatic single / multiple selection:** one eligible table uses direct PATCH; multiple tables use batched PATCH.
 - **Retention only:** requests contain `totalRetentionInDays`, not schema, subtype, plan, or analytics-retention settings.
@@ -42,7 +42,7 @@ Defender portal access alone does not necessarily grant the Azure permissions re
 5. Select your subscription and workspace.
 6. Save a copy in your environment if desired.
 
-The header should show **Workbook revision: 3.2**. Reimport the JSON when upgrading an existing copy; close any old confirmation pane and reselect tables after upgrading.
+The header should show **Workbook revision: 3.3**. Reimport the JSON when upgrading an existing copy; close any old confirmation pane and reselect tables after upgrading.
 
 ## Update retention
 
@@ -109,17 +109,20 @@ Missing rows, mismatched values, read errors, or incomplete provisioning require
 
 ### Verify tab and Activity Log
 
-In **Verify**, select **exactly one table** and refresh its current settings. There is no mode selector, historical-deployment view, or run ID to enter. When changing tables, uncheck the previous one first: search does not clear selections. If several remain checked, an explicit message appears and details/activity are hidden rather than continuing to show the first table.
+In **Verify**, select **one or more tables** (up to 800). Current settings and recent activity load for the whole selection. There is no mode selector, historical-deployment view, or run ID to enter. Search does not clear previous selections; verify the checked rows and clear/reselect when changing workspaces. Invalid or stale cross-workspace selections are blocked.
 
-**Current table settings** uses a fresh table GET. Its grid has enough room to display the returned row and no redundant single-row search box. Compare total retention with the target above and also check provisioning state, analytics retention, inheritance, plan, and subtype. If the panel is empty or reports a read error, refresh or reselect the table; an empty result is not success.
+**Current table settings** uses a fresh workspace-table GET, filtered to all selected names. Compare each table's total retention with the target above and check provisioning state, analytics retention, inheritance, plan, and subtype. Check that every expected table is present. If a row is missing or the read fails, refresh/reselect and investigate; an empty or partial result is not success.
 
 **Recent table activity** loads automatically after selection, with a default 7-day lookback. Choose 1, 7, 30, or 90 days:
 
 - Uses the native Activity Log API; no diagnostic setting or log export is required.
-- Shows operation status, timestamps, correlation IDs, and event IDs.
+- Shows the table name, Azure's operation description, status, initiator, available description/error details, event stage, and correlation ID.
+- **View event JSON** opens the full record returned by the Activity Log API. It can contain identity/network details; redact it before sharing. Azure does not always include the old/new retention values; blank fields mean the service did not supply them, not that a specific retention change has been proven.
+- **Open Azure Activity Log** opens the workspace's original Azure history. It is not an event-specific deep link: adjust the portal time range and use the displayed event time/correlation ID to find the original record.
 - Events can take **3-20 minutes** to appear.
 - `tables/write` includes PATCH, PUT, deployments, and other administrators' changes. It does not identify your last workbook click automatically.
-- Only the first returned page is shown; a coverage warning indicates more results.
+- The API request is scoped to the workspace, then filtered to the selected table resource IDs case-insensitively. Only the first returned page is shown; some selected-table events may be on later pages.
+- A warning appears **only when a continuation link exists**. The previous empty "Activity history coverage" grid has been removed. Shorten the lookback or use Azure Activity Log for full history.
 
 The settings and activity panels are independent: an Activity Log permissions error does not prove the PATCH failed. **Current direct and batched PATCH updates create no deployment records**, so historical deployment lookup has been removed.
 
