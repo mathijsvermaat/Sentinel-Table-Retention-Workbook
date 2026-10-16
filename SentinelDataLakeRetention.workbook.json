@@ -80,6 +80,7 @@
             "label": "Subscription",
             "name": "Subscription",
             "typeSettings": {
+              "includeAll": true,
               "showDefault": false,
               "additionalResourceOptions": []
             }

@@ -44,6 +44,12 @@ Defender portal access alone does not necessarily grant the Azure permissions re
 
 The header should show **Workbook revision: 3.3**. Reimport the JSON when upgrading an existing copy; close any old confirmation pane and reselect tables after upgrading.
 
+### Workspace & target rendering error in Defender
+
+The Subscription picker explicitly uses `typeSettings.includeAll: true` to list all subscriptions accessible to your portal identity. Without this setting, Defender can call its default-subscription provider when no Sentinel workspace context is available, throwing `Cannot read properties of null (reading 'subscriptionId')` and displaying **Error** for the entire **Workspace & target** block.
+
+If an older copy shows this error, reimport the updated JSON. This setting does not grant permissions or change retention; an empty subscription list still requires checking the signed-in account and its Azure access.
+
 ## Update retention
 
 1. Open **Tables** and enter **Target total retention (days)**.
