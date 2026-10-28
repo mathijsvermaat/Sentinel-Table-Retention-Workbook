@@ -2,7 +2,7 @@
 
 An Azure Monitor / Microsoft Sentinel workbook for reviewing table retention, increasing total retention for one or many tables, and forecasting Data Lake storage costs.
 
-**Current version: 3.3**
+**Current version: 1.0**
 
 Download [SentinelDataLakeRetention.workbook.json](SentinelDataLakeRetention.workbook.json) and import it into a workbook. No scripts, deployments, Azure Functions, Logic Apps, Automation accounts, or helper identities are required.
 
@@ -14,7 +14,7 @@ Download [SentinelDataLakeRetention.workbook.json](SentinelDataLakeRetention.wor
 | **Costs** | Forecast current, proposed, and additional monthly Lake storage costs from observed table volume. |
 | **Verify** | Select one or more tables to read current settings and inspect their recent Azure Activity Log events, initiators, details, and source links. |
 
-- **Automatic single / multiple selection:** one eligible table uses direct PATCH; multiple tables use batched PATCH.
+- **One workflow for one or many tables:** every prepared change uses a batch containing one retention-only PATCH per eligible table.
 - **Retention only:** requests contain `totalRetentionInDays`, not schema, subtype, plan, or analytics-retention settings.
 - **Explicit confirmation:** review table names and target retention before any update.
 - **Increase-only preview:** tables already at or above the target are skipped.
@@ -42,7 +42,9 @@ Defender portal access alone does not necessarily grant the Azure permissions re
 5. Select your subscription and workspace.
 6. Save a copy in your environment if desired.
 
-The header should show **Workbook revision: 3.3**. Reimport the JSON when upgrading an existing copy; close any old confirmation pane and reselect tables after upgrading.
+Set **Detailed guidance** to **Show** to find **Version information**, including the current version (**1.0**) and a version-history table. Public release history starts at 1.0. Reimport the JSON when upgrading an existing copy; close any old confirmation pane and reselect tables after upgrading.
+
+A single fixed batch action prevents a stale button from combining the batch API version with a newly selected table URL.
 
 ### Workspace & target rendering error in Defender
 
@@ -66,11 +68,11 @@ If an older copy shows this error, reimport the updated JSON. This setting does 
 
 | Eligible tables needing an increase | Request |
 |---|---|
-| 1 | Direct PATCH to the table API. |
+| 1 | One POST to the ARM batch endpoint, containing one PATCH. |
 | 2-20 | One POST to the ARM batch endpoint, containing one PATCH per table. |
 | More than 20 | Numbered batches of up to 20 tables, with one confirmation per prepared row. |
 
-One selection can contain up to **800 tables**, producing at most 40 batches. Nothing beyond a batch boundary is silently omitted. If several tables are selected but only one needs an increase, the workbook uses direct PATCH.
+One selection can contain up to **800 tables**, producing at most 40 batches. Nothing beyond a batch boundary is silently omitted. If several tables are selected but only one needs an increase, the workbook prepares a one-request batch.
 
 Every table update contains only:
 
@@ -82,7 +84,7 @@ Every table update contains only:
 }
 ```
 
-The workbook uses the Tables API version `2026-03-01` and, for multiple eligible tables, `POST /batch?api-version=2020-06-01`.
+Every confirmation uses the fixed endpoint `POST /batch?api-version=2020-06-01`. Each inner PATCH URL uses the Tables API version `2026-03-01`. The batch API version is never sent directly to a table endpoint. Read-back is required even for a one-request batch; an outer success is not proof that its inner PATCH succeeded.
 
 ### Eligibility and safeguards
 
@@ -94,6 +96,8 @@ The workbook uses the Tables API version `2026-03-01` and, for multiple eligible
 - Tables already at or above the target are skipped; the workbook does not intentionally model retention reductions.
 
 **Search only filters the display.** It does not clear earlier selections. Inspect the exact table names in the preview and confirmation.
+
+**An open confirmation pane is a snapshot.** If you change the selection, workspace, or target, close the pane and review the newly prepared change before confirming. Consistent batch routing prevents mixed methods and API versions; it does not make an already-open pane track later selections.
 
 **The preview is not an atomic concurrency guard.** Another administrator could increase retention after your preview was generated. Confirming a stale request could overwrite that newer value. Refresh before confirming and avoid concurrent administration.
 
@@ -130,7 +134,7 @@ In **Verify**, select **one or more tables** (up to 800). Current settings and r
 - The API request is scoped to the workspace, then filtered to the selected table resource IDs case-insensitively. Only the first returned page is shown; some selected-table events may be on later pages.
 - A warning appears **only when a continuation link exists**. The previous empty "Activity history coverage" grid has been removed. Shorten the lookback or use Azure Activity Log for full history.
 
-The settings and activity panels are independent: an Activity Log permissions error does not prove the PATCH failed. **Current direct and batched PATCH updates create no deployment records**, so historical deployment lookup has been removed.
+The settings and activity panels are independent: an Activity Log permissions error does not prove the PATCH failed. **Current batched PATCH updates create no deployment records**, so historical deployment lookup has been removed.
 
 There is **no automatic retry or rollback**. If a batch partially succeeds, investigate and retry only the tables that still need a change.
 
@@ -191,7 +195,9 @@ These are example calculations, not a price quote. With EUR selected and a EUR r
 
 ## Validation and support
 
-The workbook was tested with direct-PATCH preview, real two-table batched PATCH, an identical repeat, and fresh read-back. In the controlled batch test, full resource comparison showed changes only to total retention and its derived archive-retention value; schema, subtype, plan, analytics retention, inheritance, and protection settings stayed unchanged.
+Earlier validation included real two-table batched PATCH, an identical repeat, and fresh read-back. In that controlled batch test, full resource comparison showed changes only to total retention and its derived archive-retention value; schema, subtype, plan, analytics retention, inheritance, and protection settings stayed unchanged.
+
+The batch workflow passed schema/preservation checks and live read-only query tests for batch boundaries, request contents, invalid input, and stale or tampered reviews. Defender confirmation previews were checked for rapid one-to-many and many-to-one selection changes, including delayed readiness responses. These tests submitted no retention updates, and both test tables remained unchanged.
 
 Query tests covered exact batch boundaries, selection validation, request contents, stale reviews, and cost arithmetic. This is not certification of every table type, connector, or tenant configuration.
 
