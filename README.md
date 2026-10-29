@@ -6,7 +6,7 @@ This workbook helps security and operations teams manage total retention across 
 
 Use it to review existing settings, select the tables to update, estimate the Data Lake storage impact, and verify the results. The workflow runs inside Azure Workbooks using your portal identity; no scripts, deployments, or helper services are required.
 
-**Current version: 1.0**
+**Current version: 1.1**
 
 > [!NOTE]
 > For guidance on deciding which data to retain and for how long, see the [Sentinel Maturity Model retention guidance](https://github.com/mathijsvermaat/Sentinel-Maturity/blob/main/guidance/retention.md). The workbook helps apply and verify those decisions; it does not choose a retention policy for your organization.
@@ -93,7 +93,9 @@ Choose the observation window, currency, storage rate, and tables to forecast. T
 | **Forecast Lake spend** | Estimated monthly Lake storage with the proposed settings. |
 | **Monthly difference** | Forecast minus estimated current spend. |
 
-These are steady-state estimates, not the next invoice. Additional retained data accumulates gradually. Missing volume produces **NO ESTIMATE**, not zero cost; the combined monetary total is withheld if any selected table cannot be estimated.
+These are steady-state estimates, not the next invoice. Additional retained data accumulates gradually. Missing volume produces **NO ESTIMATE**, not zero cost.
+
+The summary adds only tables with valid estimates. If some selected tables cannot be estimated, it displays a **PARTIAL SUBTOTAL**, with **Estimated** and **Without estimate** counts. Spend and observed volume cover only the estimated tables, not the whole selection; check the per-table reasons for exclusions. If none can be estimated, the summary's monetary and volume fields remain blank. When all selected tables can be estimated, the summary includes all of them.
 
 USD/EUR selects the denomination of the rate and results; it does not convert prices. Enter the matching rate when changing currency. Displayed decimal separators follow your portal's regional format, with 2-4 decimal places.
 
@@ -123,7 +125,8 @@ An empty or partial read-back is not success. Investigate missing rows, mismatch
 |-----------------------|---------------|
 | No workspace listed, or **Workspace & target** shows an error | Reimport the latest workbook and check the signed-in account's subscription/workspace access. |
 | No prepared change | Review the target, selected rows, and readiness reasons. Refresh the inventory and reselect; some tables may already meet the target or be ineligible. |
-| **NO ESTIMATE** or no combined cost total | Check the storage rate, query permissions, observation window, and `Usage` coverage. Missing data is not zero usage. |
+| **PARTIAL SUBTOTAL** | The summary includes only tables with valid estimates. Check **Without estimate** and the per-table reasons before treating it as the cost of the full selection. |
+| **NO ESTIMATE** in the summary, or blank summary spend | No selected table has a valid estimate. Check the storage rate, query permissions, observation window, and `Usage` coverage. Missing data is not zero usage. |
 | Unexpected currency or decimal formatting | Enter the rate with a dot decimal. Match the rate to the selected currency; no exchange-rate conversion is performed. Output uses your regional format. |
 | No recent activity | Events can take 3-20 minutes to appear. Check the lookback and Activity Log permissions; activity access is independent of table-settings access. |
 | Incomplete activity history | Only the first API page is displayed. A warning indicates more history is available; shorten the lookback or open Azure Activity Log. |
