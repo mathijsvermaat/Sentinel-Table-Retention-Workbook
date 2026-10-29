@@ -41,7 +41,7 @@ Defender portal access alone does not grant the required Azure permissions. Upda
 
 ## Deployment and first use
 
-1. Download [SentinelDataLakeRetention.workbook.json](SentinelDataLakeRetention.workbook.json) using **Raw** or **Download raw file** on GitHub.
+1. Download [SentinelDataLakeRetention.json](SentinelDataLakeRetention.json) using **Raw** or **Download raw file** on GitHub.
 2. In Microsoft Defender, open **Microsoft Sentinel > Threat management > Workbooks** and add a workbook. Azure Monitor Workbooks is also supported.
 3. Select **Edit > Advanced editor**.
 4. Paste the downloaded JSON, then select **Apply** and **Done Editing**.
