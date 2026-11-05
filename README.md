@@ -6,7 +6,7 @@ This workbook helps security and operations teams manage total retention across 
 
 Use it to review existing settings, select the tables to update, estimate the Data Lake storage impact, and verify the results. The workflow runs inside Azure Workbooks using your portal identity; no scripts, deployments, or helper services are required.
 
-**Current version: 1.1**
+**Current version: 1.2**
 
 > [!NOTE]
 > For guidance on deciding which data to retain and for how long, see the [Sentinel Maturity Model retention guidance](https://github.com/mathijsvermaat/Sentinel-Maturity/blob/main/guidance/retention.md). The workbook helps apply and verify those decisions; it does not choose a retention policy for your organization.
@@ -71,6 +71,20 @@ Eligible updates are grouped into batches of up to **20 tables**, with one confi
 
 ## Understanding the results
 
+### Why table counts can differ from Defender
+
+The **Tables**, **Costs**, and **Verify** inventories list table definitions returned by the selected workspace's [ARM Tables API](https://learn.microsoft.com/en-us/rest/api/loganalytics/tables/list-by-workspace?view=rest-loganalytics-2026-03-01). They are not filtered to tables with recent ingestion. A listed definition is not proof of an active connector or stored data.
+
+The [Defender Tables page](https://learn.microsoft.com/azure/sentinel/manage-table-tiers-retention) uses a separate table-management list, with its own scope and display rules. Its item count need not match this workspace inventory. Do not interpret the difference as a count of empty tables or missing connectors; Defender can also list tables without data.
+
+In **Costs**, distinguish the selected inventory from the rows contributing to the estimate:
+
+| Count | Meaning |
+|-------|---------|
+| **Selected inventory tables** | Selected table definitions, including those without a usable estimate. |
+| **With cost estimate** | Selected tables with usable `Usage` records in the chosen 7-, 30-, or 90-full-UTC-day window and valid forecast inputs. |
+| **Without estimate** | Selected tables whose cost could not be estimated. Check the per-table reasons; missing usage does not prove a table is empty or has no storage cost. |
+
 ### Tables: decisions and scope
 
 | Decision | Meaning |
@@ -95,7 +109,7 @@ Choose the observation window, currency, storage rate, and tables to forecast. T
 
 These are steady-state estimates, not the next invoice. Additional retained data accumulates gradually. Missing volume produces **NO ESTIMATE**, not zero cost.
 
-The summary adds only tables with valid estimates. If some selected tables cannot be estimated, it displays a **PARTIAL SUBTOTAL**, with **Estimated** and **Without estimate** counts. Spend and observed volume cover only the estimated tables, not the whole selection; check the per-table reasons for exclusions. If none can be estimated, the summary's monetary and volume fields remain blank. When all selected tables can be estimated, the summary includes all of them.
+The summary adds only tables with valid estimates. If some selected tables cannot be estimated, it displays a **PARTIAL SUBTOTAL**, with **With cost estimate** and **Without estimate** counts. Spend and observed volume cover only the estimated tables, not the whole selection; check the per-table reasons for exclusions. If none can be estimated, the summary's monetary and volume fields remain blank. When all selected tables can be estimated, the summary includes all of them.
 
 USD/EUR selects the denomination of the rate and results; it does not convert prices. Enter the matching rate when changing currency. Displayed decimal separators follow your portal's regional format, with 2-4 decimal places.
 
@@ -123,6 +137,7 @@ An empty or partial read-back is not success. Investigate missing rows, mismatch
 
 | Symptom or limitation | What to check |
 |-----------------------|---------------|
+| More tables than on Defender's Tables page | The workbook lists workspace table definitions, not just tables with usage. Defender uses a different table-management list. See [Why table counts can differ from Defender](#why-table-counts-can-differ-from-defender). |
 | No workspace listed, or **Workspace & target** shows an error | Reimport the latest workbook and check the signed-in account's subscription/workspace access. |
 | No prepared change | Review the target, selected rows, and readiness reasons. Refresh the inventory and reselect; some tables may already meet the target or be ineligible. |
 | **PARTIAL SUBTOTAL** | The summary includes only tables with valid estimates. Check **Without estimate** and the per-table reasons before treating it as the cost of the full selection. |
